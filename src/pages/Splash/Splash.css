@@ -1,0 +1,97 @@
+/* ============================================================
+   SPLASH SCREEN — Mockup #1 (Clean White + Red Logo)
+   ============================================================ */
+
+.sp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: calc(100% + 36px);
+  background: #FFFFFF;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Premium Abstract Mesh ── */
+.sp::before {
+  content: '';
+  position: absolute;
+  top: -20%; left: -30%;
+  width: 150%; height: 150%;
+  background: radial-gradient(ellipse at top right, rgba(255,0,0,0.08) 0%, transparent 60%),
+              radial-gradient(ellipse at bottom left, rgba(255,0,0,0.04) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sp::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(255,0,0,0.03) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: bgPulse 8s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sp-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  z-index: 2;
+  animation: spFadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sp-logo-wrap {
+  margin-bottom: 20px;
+  animation: spFloat 3.5s ease-in-out infinite;
+}
+
+.sp-wordmark {
+  font-size: 52px;
+  font-weight: 900;
+  margin: 0 0 12px;
+  line-height: 1;
+  letter-spacing: -2.5px;
+  font-family: var(--font);
+  font-style: italic;
+}
+.sp-pobla { color: #FF0000; }
+.sp-go    { color: #FF0000; }
+
+.sp-exclusive {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 2px;
+  letter-spacing: 0.2px;
+}
+
+.sp-city {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FF0000;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+@keyframes bgPulse {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+}
+
+@keyframes spFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}

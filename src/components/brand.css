@@ -1,0 +1,18 @@
+.brand-wordmark {
+  font-family: var(--font);
+  font-weight: 900;
+  letter-spacing: -1.2px;
+  margin: 0;
+  line-height: 1;
+}
+
+.brand-pobla {
+  color: var(--txt-1);
+}
+
+.brand-go {
+  background: linear-gradient(135deg, var(--red-light) 0%, var(--red) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

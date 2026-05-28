@@ -1,0 +1,154 @@
+/* ============================================================
+   ORDERS — PREMIUM
+   ============================================================ */
+.ord { display: flex; flex-direction: column; height: 100%; background: var(--surface-2); min-height: 0; }
+
+/* ── Header ── */
+.ord-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 20px 12px; background: white;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+  animation: fadeUp 0.3s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ord-title { font-size: 21px; font-weight: 900; color: var(--txt-1); letter-spacing: -0.6px; }
+.ord-count-badge {
+  font-size: 11.5px; font-weight: 800; color: var(--red);
+  background: var(--red-bg); padding: 5px 12px;
+  border-radius: var(--r-full); letter-spacing: 0.2px;
+}
+
+/* ── Tabs ── */
+.ord-tabs {
+  display: flex; background: white;
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px; flex-shrink: 0;
+  animation: fadeUp 0.3s 0.05s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ord-tab {
+  flex: 1; padding: 14px 0; font-size: 13.5px; font-weight: 700;
+  color: var(--txt-4); background: none; border: none; cursor: pointer;
+  font-family: inherit; border-bottom: 3px solid transparent;
+  margin-bottom: -1px; transition: all 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.ord-tab.active { color: var(--red); border-bottom-color: var(--red); font-weight: 850; }
+.ord-tab:hover:not(.active) { color: var(--txt-2); }
+
+.ord-tab-count {
+  font-size: 10px; font-weight: 900;
+  background: var(--red-bg); color: var(--red);
+  padding: 2px 7px; border-radius: var(--r-full);
+  line-height: 1.2;
+}
+.ord-tab.active .ord-tab-count {
+  background: var(--red); color: white;
+}
+
+/* ── Body ── */
+.ord-body {
+  flex: 1; overflow-y: auto;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.ord-body > * { flex-shrink: 0; }
+.ord-body::-webkit-scrollbar { display: none; }
+
+/* ── Order Card ── */
+.ord-card {
+  background: white; border-radius: var(--r-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.28s cubic-bezier(0.34,1.56,0.64,1);
+  animation: fadeUp 0.4s cubic-bezier(0.22,1,0.36,1) both;
+  overflow: hidden;
+}
+.ord-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md), 0 12px 24px rgba(10,10,20,0.06);
+  border-color: rgba(232,0,28,0.1);
+}
+.ord-card:active { transform: scale(0.98); }
+
+.ord-card-top {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 16px 16px 12px;
+}
+
+.ord-stall-logo {
+  width: 46px; height: 46px;
+  background: linear-gradient(135deg, #FFF0F2 0%, #FFE4E8 100%);
+  border-radius: var(--r-md);
+  font-size: 24px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(232,0,28,0.06);
+}
+
+.ord-store-info { flex: 1; }
+.ord-store { font-size: 14.5px; font-weight: 800; color: var(--txt-1); letter-spacing: -0.2px; margin: 0 0 2px; }
+.ord-num   { font-size: 12px; color: var(--txt-3); font-weight: 500; margin: 0 0 6px; }
+
+.ord-status-pill {
+  display: inline-block; padding: 3px 10px; border-radius: var(--r-full);
+  font-size: 11px; font-weight: 800; letter-spacing: 0.2px;
+}
+
+/* Details block */
+.ord-details-block {
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.ord-items-line,
+.ord-detail-line {
+  margin: 0; font-size: 12px; color: var(--txt-3); font-weight: 500; line-height: 1.5;
+}
+.ord-detail-label {
+  font-weight: 800; color: var(--txt-2);
+}
+
+.ord-card-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+}
+.ord-total { font-size: 15px; font-weight: 900; color: var(--txt-1); letter-spacing: -0.3px; }
+
+.ord-view-btn {
+  font-size: 12px; font-weight: 800; color: var(--red);
+  background: white; border: 1.5px solid var(--red);
+  border-radius: var(--r-full);
+  padding: 8px 16px; cursor: pointer; font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  display: flex; align-items: center; gap: 5px;
+}
+.ord-view-btn:hover { background: rgba(255,0,0,0.05); transform: scale(1.05); }
+.ord-view-btn:active { transform: scale(0.95); }
+.ord-view-btn svg { stroke: var(--red); }
+
+.ord-done-label {
+  font-size: 12px; font-weight: 700; color: var(--txt-4);
+}
+
+/* Empty state */
+.ord-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px;
+  color: var(--txt-4); animation: fadeIn 0.4s ease both;
+  padding: 40px 20px;
+}
+.ord-empty-icon {
+  width: 72px; height: 72px;
+  background: var(--surface-3);
+  border-radius: var(--r-full);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+  color: var(--txt-4);
+}
+.ord-empty-title {
+  font-size: 15px; font-weight: 800; color: var(--txt-3); margin: 0;
+}
+.ord-empty-sub {
+  font-size: 12.5px; font-weight: 500; color: var(--txt-4); margin: 0;
+}

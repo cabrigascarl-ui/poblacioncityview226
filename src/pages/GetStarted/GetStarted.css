@@ -1,0 +1,200 @@
+/* ============================================================
+   GET STARTED — Premium Animated Edition
+   ============================================================ */
+
+.gs-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: calc(100% + 36px);
+  margin-top: -36px;
+  background: #FFFFFF;
+  padding: 60px 28px 40px;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Premium Abstract Mesh ── */
+.gs-container::before {
+  content: '';
+  position: absolute;
+  top: -20%; left: -30%;
+  width: 150%; height: 150%;
+  background: radial-gradient(ellipse at top left, rgba(255,0,0,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at bottom right, rgba(255,0,0,0.04) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.gs-container::after {
+  content: '';
+  position: absolute;
+  top: 10%; right: -20%;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(255,0,0,0.03) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: bgPulse 8s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.gs-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Top: Logo + Branding ── */
+.gs-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.gs-logo-wrap {
+  margin-bottom: 20px;
+  filter: drop-shadow(0 10px 20px rgba(255,0,0,0.12));
+  animation: gsPopIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.gs-wordmark {
+  font-size: 48px;
+  font-weight: 900;
+  margin: 0 0 12px;
+  line-height: 1;
+  letter-spacing: -2.5px;
+  font-family: var(--font);
+  font-style: italic;
+  animation: gsFadeUp 0.6s 0.15s cubic-bezier(0.22,1,0.36,1) both;
+}
+.gs-pobla { color: #FF0000; }
+.gs-go    { color: #FF0000; }
+
+.gs-exclusive {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 2px;
+  animation: gsFadeUp 0.6s 0.25s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+.gs-city {
+  font-size: 16px;
+  font-weight: 700;
+  color: #FF0000;
+  margin: 0;
+  animation: gsFadeUp 0.6s 0.35s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* ── Bottom: Action Buttons ── */
+.gs-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Common button base */
+.gs-btn-base {
+  width: 100%;
+  font-family: var(--font);
+  padding: 17px;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  letter-spacing: 0.2px;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Login — solid red */
+.gs-btn-login {
+  background: linear-gradient(135deg, #FF3333 0%, #FF0000 50%, #CC0000 100%);
+  background-size: 200% 200%;
+  color: white;
+  box-shadow: 0 8px 24px rgba(255,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25);
+  animation: gsFadeUp 0.6s 0.45s cubic-bezier(0.22,1,0.36,1) both;
+}
+.gs-btn-login::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transform: skewX(-15deg);
+  animation: gsShimmer 4s ease-in-out infinite;
+}
+.gs-btn-login:hover {
+  background-position: 100% 100%;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(255,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.gs-btn-login:active { transform: scale(0.97); }
+
+/* Register — red outline */
+.gs-btn-register {
+  background: white;
+  border: 1.5px solid rgba(255,0,0,0.8);
+  color: #FF0000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  animation: gsFadeUp 0.6s 0.55s cubic-bezier(0.22,1,0.36,1) both;
+}
+.gs-btn-register:hover {
+  background: #FFF5F5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(255,0,0,0.12);
+  border-color: #FF0000;
+}
+.gs-btn-register:active { transform: scale(0.97); }
+
+/* Continue as Guest — gray outline */
+.gs-btn-guest {
+  background: white;
+  border: 1.5px solid #E9ECEF;
+  color: #495057;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  animation: gsFadeUp 0.6s 0.65s cubic-bezier(0.22,1,0.36,1) both;
+}
+.gs-btn-guest:hover {
+  background: #F8F9FA;
+  border-color: #CED4DA;
+  color: #111;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+}
+.gs-btn-guest:active { transform: scale(0.97); }
+
+/* ── Animations ── */
+@keyframes gsPopIn {
+  0% { opacity: 0; transform: scale(0.8) translateY(20px); filter: blur(4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+
+@keyframes gsFadeUp {
+  0% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gsShimmer {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+@keyframes bgPulse {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.3); opacity: 1; }
+}

@@ -1,0 +1,184 @@
+/* ============================================================
+   RESTAURANT — PREMIUM v2.0
+   ============================================================ */
+.rest { 
+  display: flex; flex-direction: column; height: 100%; 
+  background: var(--surface-2); position: relative; min-height: 0;
+}
+
+/* ── Top Navigation Header ── */
+.rest-nav-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px 12px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  flex-shrink: 0; position: relative; z-index: 100;
+  animation: fadeIn 0.3s ease both;
+  box-shadow: 0 4px 18px rgba(10, 10, 20, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.rest-back-btn, .rest-fav-btn {
+  width: 40px; height: 40px; border-radius: var(--r-full); border: 1px solid var(--border);
+  background: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.24s cubic-bezier(0.34,1.56,0.64,1); box-shadow: var(--shadow-xs), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  color: var(--txt-1);
+}
+.rest-back-btn:hover, .rest-fav-btn:hover { background: var(--surface-2); transform: translateY(-1.5px) scale(1.05); border-color: rgba(232, 0, 28, 0.12); }
+.rest-back-btn:active, .rest-fav-btn:active { transform: scale(0.92); }
+.rest-header-title { font-size: 16px; font-weight: 850; color: var(--txt-1); letter-spacing: -0.4px; }
+
+/* ── Scrollable Area ── */
+.rest-scroll {
+  flex: 1; overflow-y: auto;
+}
+.rest-scroll::-webkit-scrollbar { display: none; }
+
+/* ── Hero Banner ── */
+.rest-hero-container {
+  display: flex; flex-direction: column; margin-bottom: 16px;
+  animation: fadeUp 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
+.rest-banner-img {
+  height: 150px; background: linear-gradient(135deg, var(--red-light) 0%, var(--red) 50%, var(--red-deep) 100%);
+  display: flex; align-items: center; justify-content: center; position: relative;
+}
+.rest-banner-img::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle, transparent 30%, rgba(0,0,0,0.2) 100%);
+}
+.rest-hero-card {
+  background: white; border-radius: var(--r-xl); padding: 18px 20px;
+  margin: -30px 16px 0; position: relative; z-index: 10;
+  box-shadow: 0 12px 36px rgba(10, 10, 20, 0.08), inset 0 1.5px 0 rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border);
+}
+.rest-hero-name { font-size: 22px; font-weight: 900; color: var(--txt-1); letter-spacing: -0.6px; margin: 0 0 8px; }
+
+.rest-rating-row, .rest-delivery-info {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px;
+  font-size: 13px; color: var(--txt-2); font-weight: 600;
+}
+.rest-star { color: var(--amber); font-size: 15px; }
+.rest-rating-val { font-weight: 800; color: var(--txt-1); }
+.rest-reviews-count { color: var(--txt-4); font-weight: 500; }
+.rest-meta-sep { color: var(--border); }
+.rest-cuisine { color: var(--red); font-weight: 700; }
+
+.rest-delivery-info { color: var(--txt-3); margin-bottom: 0; }
+
+/* ── Proximity Alert Box ── */
+.rest-proximity-alert {
+  margin: 0 16px 20px; padding: 14px 16px; background: rgba(0,197,102,0.05);
+  border: 1px solid rgba(0,197,102,0.18); border-radius: var(--r-lg);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  animation: fadeUp 0.4s 0.05s cubic-bezier(0.22,1,0.36,1) both;
+}
+.rest-alert-content { display: flex; align-items: center; gap: 10px; color: var(--green); }
+.rest-alert-text { display: flex; flex-direction: column; }
+.rest-alert-title { font-size: 13.5px; font-weight: 800; margin: 0; line-height: 1.2; }
+.rest-alert-desc { font-size: 11.5px; margin: 0; opacity: 0.85; font-weight: 600; }
+.rest-alert-link {
+  background: white; border: 1px solid rgba(0,197,102,0.2); color: var(--green);
+  font-size: 11.5px; font-weight: 800; border-radius: var(--r-full); padding: 5px 12px;
+  cursor: pointer; box-shadow: var(--shadow-xs); transition: all 0.2s;
+}
+.rest-alert-link:hover { background: rgba(0,197,102,0.1); transform: scale(1.03); }
+.rest-alert-link:active { transform: scale(0.96); }
+
+/* ── Tabs selector ── */
+.rest-tabs {
+  display: flex; gap: 8px; border-bottom: 1px solid var(--border);
+  margin: 0 16px 20px; padding-bottom: 6px;
+  animation: fadeUp 0.4s 0.10s cubic-bezier(0.22,1,0.36,1) both;
+}
+.rest-tab {
+  border: none; background: none; font-family: inherit; font-size: 14px; font-weight: 700;
+  color: var(--txt-4); padding: 6px 12px; cursor: pointer; transition: all 0.2s;
+  position: relative;
+}
+.rest-tab.active { color: var(--red); font-weight: 800; }
+.rest-tab.active::after {
+  content: ''; position: absolute; bottom: -7.5px; left: 12px; right: 12px; height: 3px;
+  background: var(--red); border-radius: var(--r-full);
+}
+
+/* ── Menu Section ── */
+.rest-menu-section {
+  padding: 0 16px; animation: fadeUp 0.4s 0.15s cubic-bezier(0.22,1,0.36,1) both;
+}
+.rest-section-heading { font-size: 16px; font-weight: 900; color: var(--txt-1); margin-bottom: 14px; letter-spacing: -0.3px; }
+
+.rest-items-grid { display: flex; flex-direction: column; gap: 12px; }
+
+.rest-item-card {
+  background: white; border-radius: 20px; padding: 16px; border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.8); display: flex; flex-direction: column; transition: all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.rest-item-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md), 0 12px 24px rgba(10,10,20,0.06); border-color: rgba(232, 0, 28, 0.1); }
+
+.rest-item-content { display: flex; align-items: flex-start; gap: 14px; }
+.rest-item-details { flex: 1; }
+.rest-item-title { font-size: 14.5px; font-weight: 800; color: var(--txt-1); letter-spacing: -0.2px; margin: 0 0 4px; }
+.rest-item-desc { font-size: 11.5px; color: var(--txt-3); margin: 0 0 8px; line-height: 1.4; font-weight: 500; }
+.rest-item-price { font-size: 15.5px; font-weight: 900; color: var(--red); }
+
+.rest-item-image-wrap {
+  width: 76px; height: 76px; border-radius: var(--r-md); background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center; font-size: 36px;
+  flex-shrink: 0; border: 1px solid var(--border-2);
+}
+
+.rest-qty-wrapper { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 8px; }
+.rest-qty-indicator { font-size: 12px; font-weight: 700; color: var(--green); }
+
+.rest-plus-btn {
+  width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--surface-3);
+  display: flex; align-items: center; justify-content: center; color: var(--txt-2);
+  cursor: pointer; align-self: flex-end; transition: all 0.2s; margin-top: 8px;
+}
+.rest-plus-btn:hover { background: var(--border); transform: scale(1.08); }
+.rest-plus-btn.active {
+  background: linear-gradient(135deg, var(--red-light), var(--red)); color: white;
+  box-shadow: var(--shadow-red-sm); margin-top: 0;
+}
+.rest-plus-btn.active:hover { transform: scale(1.08); box-shadow: var(--shadow-red); }
+
+/* ── Reviews ── */
+.rest-reviews-section { display: flex; flex-direction: column; gap: 10px; padding: 0 16px; }
+.rest-review-card { background: white; border-radius: var(--r-lg); padding: 14px; border: 1px solid var(--border); box-shadow: var(--shadow-xs); }
+.rest-review-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.rest-review-author { font-size: 12.5px; font-weight: 800; color: var(--txt-1); }
+.rest-review-stars { color: var(--amber); font-size: 11px; }
+.rest-review-text { font-size: 12.5px; color: var(--txt-3); margin: 0; line-height: 1.45; font-weight: 500; }
+
+/* ── Info ── */
+.rest-info-section { display: flex; flex-direction: column; gap: 12px; padding: 0 16px; }
+.rest-info-row { display: flex; flex-direction: column; gap: 4px; background: white; padding: 14px; border-radius: var(--r-lg); border: 1px solid var(--border); }
+.rest-info-label { font-size: 11.5px; font-weight: 800; color: var(--txt-4); text-transform: uppercase; letter-spacing: 0.5px; }
+.rest-info-value { font-size: 13.5px; font-weight: 600; color: var(--txt-1); line-height: 1.45; }
+
+/* ── View Cart Floating Bar ── */
+.rest-cart-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; padding: 14px 18px 18px;
+  background: linear-gradient(to top, rgba(243, 243, 248, 0.98) 55%, transparent);
+  z-index: 100;
+  animation: slideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.rest-cart-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: linear-gradient(135deg, var(--red-light) 0%, var(--red) 45%, var(--red-dark) 100%);
+  color: white; border: none; border-radius: 18px; padding: 17px 22px; width: 100%;
+  font-size: 15px; font-weight: 800; font-family: var(--font); letter-spacing: 0.2px;
+  cursor: pointer; box-shadow: var(--shadow-red); transition: all 0.25s;
+  position: relative; overflow: hidden;
+}
+.rest-cart-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 50%);
+  pointer-events: none;
+}
+.rest-cart-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(232, 0, 28, 0.5); }
+.rest-cart-btn:active { transform: scale(0.98); }

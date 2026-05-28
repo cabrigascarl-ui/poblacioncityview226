@@ -1,0 +1,465 @@
+/* ============================================================
+   ORDER TRACKING — PREMIUM v2.0
+   ============================================================ */
+
+/* ──────────────────────────────────────────────────────────
+   1. LIVE MAP VIEW STYLES (#6 Mockup)
+   ────────────────────────────────────────────────────────── */
+.ot-live-map {
+  display: flex; flex-direction: column; height: 100%;
+  background: var(--surface-2); position: relative; min-height: 0;
+}
+
+/* Red Top Bar */
+.ot-map-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--red) 0%, var(--red-deep) 100%);
+  color: white; flex-shrink: 0; position: relative; z-index: 100;
+  box-shadow: 0 4px 20px rgba(232, 0, 28, 0.15);
+}
+.ot-map-back {
+  background: none; border: none; color: white; cursor: pointer;
+  width: 40px; height: 40px; border-radius: var(--r-full);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.ot-map-back:hover { background: rgba(255,255,255,0.15); }
+.ot-map-back:active { transform: scale(0.9); }
+.ot-map-title { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; }
+
+/* Stats Row: Side by Side ETA & Distance */
+.ot-map-stats-row {
+  display: flex; gap: 12px; padding: 14px 16px; flex-shrink: 0;
+  animation: fadeUp 0.35s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ot-stat-card {
+  flex: 1; background: white; border-radius: var(--r-xl); padding: 12px 16px;
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  display: flex; flex-direction: column; gap: 2px;
+  transition: transform 0.25s;
+}
+.ot-stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.ot-stat-label { font-size: 11px; font-weight: 700; color: var(--txt-4); text-transform: uppercase; letter-spacing: 0.5px; }
+.ot-stat-value { font-size: 18px; font-weight: 900; color: var(--red); letter-spacing: -0.4px; }
+
+/* Map Area */
+.ot-map-canvas {
+  flex: 1; position: relative; z-index: 10; margin: 0 16px;
+  border-radius: var(--r-xl); overflow: hidden; border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-md), 0 12px 32px rgba(10, 10, 20, 0.08);
+  animation: fadeUp 0.4s 0.05s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* ─── PREMIUM MAP PIN SYSTEM ───────────────────────────────── */
+
+/* Motorcycle Rider Pin */
+.map-moto-pin {
+  width: 56px; height: 56px;
+  background: linear-gradient(145deg, #E8001C, #a80014);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(232,0,28,0.45), 0 0 0 5px rgba(232,0,28,0.15);
+  position: relative;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.map-moto-pulse {
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  background: rgba(232,0,28,0.2);
+  animation: motoPulse 1.6s infinite ease-out;
+}
+@keyframes motoPulse {
+  0%   { transform: scale(0.85); opacity: 0.8; }
+  70%  { transform: scale(1.4);  opacity: 0; }
+  100% { transform: scale(0.85); opacity: 0; }
+}
+@keyframes riderPulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Teardrop Destination Pin */
+.map-dest-pin {
+  filter: drop-shadow(0 4px 10px rgba(25,113,194,0.45));
+  transition: transform 0.3s ease;
+}
+.map-dest-pin:hover { transform: scale(1.08); }
+
+/* Stall / Restaurant Pin */
+.map-stall-pin {
+  width: 42px; height: 52px;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.map-stall-pin::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(145deg, #FF6B35, #D63B00);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 4px 14px rgba(214,59,0,0.4);
+}
+.map-stall-pin svg { position: relative; z-index: 1; }
+
+/* ──────────────────────────────────────────────────────────── */
+
+/* Rider Profile Bottom Card */
+.ot-rider-card {
+  margin: 14px 16px 20px; background: white; border-radius: var(--r-xl);
+  padding: 16px; border: 1.5px solid var(--border); box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  flex-shrink: 0; z-index: 20;
+  animation: fadeUp 0.4s 0.12s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ot-rider-profile { display: flex; align-items: center; gap: 12px; }
+.ot-rider-photo {
+  width: 48px; height: 48px; border-radius: var(--r-lg);
+  background: linear-gradient(135deg, var(--red-bg), var(--surface-3));
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+  border: 1px solid var(--border-2);
+}
+.ot-rider-info { display: flex; flex-direction: column; }
+.ot-rider-lbl { font-size: 10px; font-weight: 700; color: var(--txt-4); text-transform: uppercase; }
+.ot-rider-name { font-size: 15px; font-weight: 800; color: var(--txt-1); margin: 1px 0; }
+.ot-rider-rating { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--txt-2); }
+.ot-rider-star { color: var(--amber); }
+
+.ot-rider-actions { display: flex; gap: 10px; }
+.ot-action-btn {
+  width: 42px; height: 42px; border-radius: 50%; border: 1.5px solid var(--red-soft);
+  background: white; color: var(--red); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ot-action-btn:hover { background: var(--red-bg); transform: scale(1.08); }
+.ot-action-btn:active { transform: scale(0.92); }
+
+/* ──────────────────────────────────────────────────────────
+   2. VERTICAL STEPS VIEW STYLES (#5 Mockup)
+   ────────────────────────────────────────────────────────── */
+.ot-steps-view {
+  display: flex; flex-direction: column; height: 100%;
+  background: var(--surface-2); min-height: 0;
+}
+
+/* Header Bar */
+.ot-steps-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; background: white; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+.ot-steps-back {
+  background: none; border: none; color: var(--txt-1); cursor: pointer;
+  width: 40px; height: 40px; border-radius: var(--r-full);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.ot-steps-back:hover { background: var(--surface-2); }
+.ot-steps-title { font-size: 17px; font-weight: 800; color: var(--txt-1); letter-spacing: -0.3px; }
+
+.ot-steps-scroll {
+  flex: 1; overflow-y: auto; padding: 16px 16px 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.ot-steps-scroll::-webkit-scrollbar { display: none; }
+
+/* Top Order Details Card */
+.ot-order-top-card {
+  background: white; border-radius: var(--r-xl); padding: 16px 20px;
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  animation: fadeUp 0.35s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ot-order-main-info { display: flex; flex-direction: column; gap: 4px; }
+.ot-order-num { font-size: 16px; font-weight: 900; color: var(--txt-1); letter-spacing: -0.4px; }
+.ot-order-time { font-size: 12px; color: var(--txt-3); font-weight: 500; }
+
+.ot-order-status-badge {
+  background: rgba(232,0,28,0.06); border: 1.5px solid rgba(232,0,28,0.15);
+  border-radius: var(--r-full); padding: 5px 12px; display: flex; align-items: center; gap: 6px;
+}
+.ot-badge-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+.ot-badge-dot.animate { animation: otPulse 1.2s infinite ease-in-out; }
+@keyframes otPulse {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0.5; }
+}
+.ot-badge-text { font-size: 11px; font-weight: 800; color: var(--red); text-transform: uppercase; letter-spacing: 0.3px; }
+
+/* Vertical Progress Card */
+.ot-vertical-steps-card {
+  background: white; border-radius: var(--r-xl); padding: 22px 20px;
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; gap: 4px;
+  animation: fadeUp 0.4s 0.05s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ot-vertical-step {
+  display: flex; gap: 16px; position: relative;
+}
+.ot-step-visual {
+  display: flex; flex-direction: column; align-items: center; flex-shrink: 0;
+}
+.ot-step-circle {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--surface-3);
+  border: 2px solid var(--border-2); display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: var(--txt-3); z-index: 10;
+  transition: all 0.25s;
+}
+.ot-step-circle.done {
+  background: var(--green); border-color: var(--green); color: white;
+}
+.ot-step-circle.active {
+  background: var(--red); border-color: var(--red); color: white;
+  box-shadow: 0 0 0 4px rgba(232,0,28,0.15);
+}
+
+.ot-step-connector-line {
+  width: 2.5px; flex: 1; min-height: 44px; background: var(--surface-3);
+  margin: 4px 0; border-radius: var(--r-full);
+}
+.ot-step-connector-line.done { background: var(--green); }
+
+.ot-step-body { padding-top: 4px; padding-bottom: 20px; flex: 1; }
+.ot-step-name { font-size: 14.5px; font-weight: 800; color: var(--txt-2); margin: 0 0 3px; }
+.ot-vertical-step.active .ot-step-name { color: var(--red); }
+.ot-vertical-step.done .ot-step-name { color: var(--txt-1); }
+.ot-step-desc { font-size: 12px; color: var(--txt-3); margin: 0; font-weight: 500; }
+
+/* Help support card */
+.ot-map-cta {
+  width: 100%;
+  background: var(--red);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: var(--font);
+  cursor: pointer;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-red-sm);
+}
+
+.ot-help-card {
+  background: linear-gradient(135deg, var(--surface-1) 0%, var(--surface-2) 100%);
+  border-radius: var(--r-xl); padding: 18px 20px; border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 4px;
+  animation: fadeUp 0.4s 0.10s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ot-help-title { font-size: 14.5px; font-weight: 800; color: var(--txt-1); margin: 0; }
+.ot-help-desc { font-size: 12px; color: var(--txt-3); margin: 0 0 12px; font-weight: 500; }
+.ot-help-btn {
+  background: var(--txt-1); color: white; border: none; border-radius: var(--r-lg);
+  padding: 10px 16px; font-size: 12.5px; font-weight: 800; cursor: pointer;
+  align-self: flex-start; transition: all 0.2s;
+}
+.ot-help-btn:hover { background: #000; transform: scale(1.02); }
+.ot-help-btn:active { transform: scale(0.98); }
+
+/* ── PROGRESS BAR ── */
+.ot-progress-bar-track {
+  height: 4px; background: rgba(232,0,28,0.12); flex-shrink: 0; position: relative; z-index: 101;
+}
+.ot-progress-bar-fill {
+  height: 100%; background: linear-gradient(90deg, #E8001C, #ff6b6b);
+  border-radius: 0 4px 4px 0;
+  transition: width 0.8s cubic-bezier(0.22,1,0.36,1);
+  box-shadow: 0 0 8px rgba(232,0,28,0.5);
+}
+
+/* ── STAT SUB LABEL ── */
+.ot-stat-sub { font-size: 10px; color: var(--txt-4); font-weight: 600; margin-top: 1px; }
+.ot-map-stats-row { display: flex; gap: 8px; padding: 10px 14px; flex-shrink: 0; }
+.ot-stat-card { flex: 1; background: white; border-radius: 14px; padding: 10px 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 1px; }
+.ot-stat-label { font-size: 10px; font-weight: 700; color: var(--txt-4); text-transform: uppercase; letter-spacing: 0.5px; }
+.ot-stat-value { font-size: 16px; font-weight: 900; color: var(--red); letter-spacing: -0.4px; line-height: 1.1; }
+
+/* ── FULLSCREEN ── */
+.ot-fullscreen { position: fixed; inset: 0; z-index: 9999; }
+.ot-fullscreen .ot-map-canvas { border-radius: 0; margin: 0; }
+
+/* ── NEARBY ALERT ── */
+.ot-nearby-alert {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 300;
+  background: linear-gradient(135deg, #2D7D46, #1e5c33);
+  color: white; padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 700;
+  animation: slideDown 0.4s cubic-bezier(0.22,1,0.36,1) both;
+  box-shadow: 0 4px 20px rgba(45,125,70,0.4);
+}
+@keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.ot-nearby-alert span:first-child { font-size: 22px; flex-shrink: 0; }
+.ot-nearby-alert span:nth-child(2) { flex: 1; line-height: 1.4; }
+.ot-nearby-alert button { background: rgba(255,255,255,0.2); border: none; color: white; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 12px; flex-shrink: 0; }
+
+/* ── FLOATING MAP CONTROLS ── */
+.ot-map-float-controls {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 8px; z-index: 200;
+}
+.ot-float-btn {
+  width: 40px; height: 40px; border-radius: 12px; border: none;
+  background: white; color: var(--txt-2);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18); cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ot-float-btn:hover { transform: scale(1.1); box-shadow: 0 4px 16px rgba(0,0,0,0.22); }
+.ot-float-btn:active { transform: scale(0.94); }
+.ot-float-btn.active { background: var(--red); color: white; }
+
+/* ── FLOATING CALL BUTTON ── */
+.ot-float-call {
+  position: absolute; left: 12px; bottom: 20px; z-index: 200;
+  width: 48px; height: 48px; border-radius: 50%; border: none;
+  background: linear-gradient(135deg, #2D7D46, #1e5c33);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(45,125,70,0.4), 0 0 0 4px rgba(45,125,70,0.15);
+  cursor: pointer; transition: all 0.2s;
+  animation: motoPulse 2s infinite ease-out;
+}
+.ot-float-call:hover { transform: scale(1.08); }
+
+/* ── RIDER BOTTOM SHEET ── */
+.ot-rider-sheet {
+  margin: 10px 12px 12px; background: white; border-radius: 20px;
+  padding: 0 16px 14px; border: 1px solid var(--border);
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+  flex-shrink: 0; transition: all 0.35s cubic-bezier(0.22,1,0.36,1);
+}
+.ot-sheet-handle {
+  width: 36px; height: 4px; background: var(--border-2); border-radius: 2px;
+  margin: 10px auto 12px; cursor: pointer; transition: background 0.2s;
+}
+.ot-sheet-handle:hover { background: var(--txt-4); }
+
+.ot-rider-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ot-rider-photo {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+.ot-rider-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.ot-rider-lbl {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--txt-4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.ot-rider-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--txt-1);
+}
+.ot-rider-rating {
+  font-size: 12px;
+  color: var(--txt-3);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ot-rider-star {
+  color: #FFB300;
+  font-size: 14px;
+}
+.ot-rider-actions {
+  display: flex;
+  gap: 8px;
+}
+.ot-action-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #ffe3e3;
+  background: white;
+  color: var(--red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ot-action-btn:hover {
+  background: #fff5f5;
+  border-color: #ffc9c9;
+  transform: scale(1.05);
+}
+.ot-action-btn:active {
+  transform: scale(0.95);
+}
+
+/* ── CHATBOX ── */
+.ot-chat-container {
+  padding: 12px 0 4px; border-top: 1px solid var(--border); margin-top: 10px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ot-chat-history {
+  display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;
+  padding: 4px;
+}
+.ot-chat-bubble {
+  max-width: 85%; padding: 10px 14px; border-radius: 16px; font-size: 13px; font-weight: 500;
+  line-height: 1.4; font-family: var(--font); animation: fadeUp 0.2s ease-out;
+}
+.ot-chat-bubble.me {
+  align-self: flex-end; background: var(--red); color: white; border-bottom-right-radius: 4px;
+}
+.ot-chat-bubble.rider {
+  align-self: flex-start; background: var(--surface-2); color: var(--txt-1); border-bottom-left-radius: 4px; border: 1px solid var(--border);
+}
+.ot-qm-scroll {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 2px;
+}
+.ot-qm-scroll::-webkit-scrollbar { display: none; }
+.ot-qm-btn {
+  background: white; border: 1px solid var(--border); border-radius: 20px;
+  padding: 6px 12px; font-size: 11.5px; font-weight: 700; color: var(--txt-2);
+  cursor: pointer; font-family: var(--font); white-space: nowrap; flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02); transition: all 0.2s;
+}
+.ot-qm-btn:hover { background: var(--red-bg); border-color: var(--red-soft); color: var(--red); transform: scale(1.02); }
+.ot-qm-btn:active { transform: scale(0.97); }
+
+.ot-chat-input-row {
+  display: flex; gap: 8px; align-items: center;
+}
+.ot-chat-input-row input {
+  flex: 1; padding: 10px 14px; border-radius: 20px; border: 1px solid var(--border-2);
+  background: var(--surface-1); font-size: 13px; font-family: var(--font); outline: none;
+  transition: all 0.2s;
+}
+.ot-chat-input-row input:focus { border-color: var(--red); background: white; box-shadow: 0 0 0 3px rgba(232,0,28,0.1); }
+.ot-chat-input-row button {
+  width: 38px; height: 38px; border-radius: 50%; border: none; background: var(--red); color: white;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;
+}
+.ot-chat-input-row button:hover { transform: scale(1.05); background: #c90018; }
+.ot-chat-input-row button:active { transform: scale(0.95); }
+
+/* ── ORDER SUMMARY IN SHEET ── */
+.ot-sheet-order-summary { padding: 10px 0 4px; border-top: 1px solid var(--border); margin-top: 10px; }
+.ot-sheet-sum-title { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--txt-4); letter-spacing: 0.5px; margin: 0 0 8px; }
+.ot-sheet-sum-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 12.5px; font-weight: 700; color: var(--txt-2); border-bottom: 1px solid var(--border); }
+.ot-sheet-sum-row:last-child { border-bottom: none; }
+
+/* ── MAP CANVAS OVERRIDE ── */
+.ot-map-canvas { flex: 1; position: relative; z-index: 10; margin: 0 12px; border-radius: 18px; overflow: hidden; border: 1.5px solid var(--border); box-shadow: 0 8px 32px rgba(10,10,20,0.1); }

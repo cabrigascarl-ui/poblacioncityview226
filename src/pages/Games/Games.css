@@ -1,0 +1,1039 @@
+/* Container & Base Styles */
+.games-page-container {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #FAFAFA;
+  font-family: 'Inter', sans-serif;
+  padding-bottom: 80px; /* Space for bottom nav */
+}
+
+.games-view {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.3s ease;
+}
+
+.games-view.no-padding {
+  padding: 0;
+  padding-bottom: 80px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.view-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: #1a1a1a;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #1a1a1a;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.games-header-app {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.games-header-app h2 {
+  color: #C60000;
+  font-weight: 800;
+  margin: 0;
+  font-size: 24px;
+}
+
+/* Home Banner */
+.games-banner-slider {
+  border-radius: 16px;
+  overflow: hidden;
+  height: 200px;
+  position: relative;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 20px rgba(198,0,0,0.15);
+}
+
+.games-banner-slide {
+  height: 100%;
+  position: relative;
+}
+
+.games-banner-bg {
+  position: absolute;
+  inset: 0;
+}
+
+.games-banner-overlay {
+  position: relative;
+  z-index: 2;
+  padding: 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.games-banner-title {
+  color: white;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 0 0 8px;
+}
+
+.games-banner-sub {
+  color: rgba(255,255,255,0.9);
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+
+.games-banner-btn {
+  background: white;
+  color: #C60000;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 14px;
+  align-self: flex-start;
+  cursor: pointer;
+}
+
+/* Categories */
+.games-categories {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.category-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.cat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.category-item span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a4a4a;
+  text-align: center;
+}
+
+/* Section Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.view-all {
+  font-size: 14px;
+  color: #C60000;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Open Play Card */
+.open-play-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  display: flex;
+}
+
+.op-image {
+  width: 120px;
+  background-size: cover;
+  background-position: center;
+}
+
+.op-details {
+  padding: 16px;
+  flex: 1;
+}
+
+.op-details h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.op-type {
+  font-size: 12px;
+  color: #888;
+  margin: 0 0 8px;
+}
+
+.op-time {
+  font-size: 13px;
+  color: #444;
+  margin: 0 0 12px;
+  font-weight: 500;
+}
+
+.op-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.op-players {
+  font-size: 12px;
+  color: #666;
+}
+
+.btn-join {
+  background: #C60000;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Filters */
+.filter-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.filter-tabs .tab {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #E0E0E0;
+  background: white;
+  color: #666;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.filter-tabs .tab.active {
+  background: #FFF0F0;
+  color: #C60000;
+  border-color: #C60000;
+}
+
+/* Court List */
+.court-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.court-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  cursor: pointer;
+}
+
+.court-img-placeholder {
+  width: 100%;
+}
+
+.court-info {
+  padding: 16px;
+}
+
+.court-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.court-title-row h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.badge-available {
+  background: #E8F5E9;
+  color: #2E7D32;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.court-location {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 12px;
+}
+
+.court-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.court-rating {
+  font-size: 13px;
+  color: #F5A623;
+  font-weight: 600;
+}
+
+.court-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1A1A1A;
+}
+
+.btn-book-now {
+  width: 100%;
+  background: #C60000;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Court Details */
+.court-hero {
+  height: 250px;
+  background: #e0e0e0;
+  position: relative;
+}
+
+.hero-back {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: white;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.court-details-body {
+  padding: 24px;
+  background: white;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  margin-top: -24px;
+  position: relative;
+  z-index: 2;
+}
+
+.court-details-body h2 {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.court-rating-price {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.court-features {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.feature .icon {
+  width: 48px;
+  height: 48px;
+  background: #f5f5f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.feature span {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.court-section {
+  margin-bottom: 24px;
+}
+
+.court-section h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.court-desc {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.amenities-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.amenities-list li {
+  font-size: 14px;
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fixed-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 16px 20px;
+  background: white;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+  z-index: 10;
+  display: flex;
+  gap: 12px;
+}
+
+.fixed-bottom-bar.flex-col {
+  flex-direction: column;
+}
+
+.btn-primary {
+  background: #C60000;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary.full {
+  width: 100%;
+}
+
+.btn-secondary {
+  background: white;
+  color: #C60000;
+  border: 1px solid #C60000;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Calendar & Time */
+.calendar-placeholder {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.calendar-placeholder h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  text-align: center;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.cal-day-name {
+  font-size: 12px;
+  color: #888;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.cal-day {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 14px;
+  margin: auto;
+}
+
+.cal-day.selected {
+  background: #C60000;
+  color: white;
+  font-weight: 700;
+}
+
+.time-chips {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.time-chip {
+  padding: 8px 16px;
+  background: #f5f5f5;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+}
+
+.time-chip.active {
+  background: #FFF0F0;
+  color: #C60000;
+}
+
+.time-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  justify-content: center;
+}
+
+.time-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot.green { background: #4CAF50; }
+.dot.yellow { background: #FFC107; }
+.dot.red { background: #F44336; }
+
+.time-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.time-slot {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  background: white;
+}
+
+.time-slot.available { border-color: #E8F5E9; }
+.time-slot.ongoing { background: #FFF8E1; border-color: #FFECB3; }
+.time-slot.reserved { background: #FFEBEE; border-color: #FFCDD2; opacity: 0.7; }
+
+.time-slot.selected {
+  border: 2px solid #C60000;
+  background: #FFF0F0;
+}
+
+.time-slot .status-label { font-size: 12px; font-weight: 600; }
+.time-slot.available .status-label { color: #4CAF50; }
+.time-slot.ongoing .status-label { color: #FF9800; }
+.time-slot.reserved .status-label { color: #F44336; }
+
+/* Booking Summary */
+.summary-court-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.scc-img { width: 80px; height: 80px; border-radius: 8px; }
+
+.scc-info h4 { margin: 0 0 4px; font-size: 16px; font-weight: 700; }
+.scc-info p { margin: 0; font-size: 13px; color: #666; }
+
+.booking-details-box {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+
+.booking-details-box h3 { margin: 0 0 16px; font-size: 16px; font-weight: 700; }
+
+.bd-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.bd-row span:first-child { color: #666; }
+.bd-row span:last-child { font-weight: 600; color: #1a1a1a; }
+
+.divider { height: 1px; background: #eee; margin: 16px 0; }
+
+.bd-row.total span { font-size: 16px; font-weight: 800; }
+.bd-row.total span.price { color: #C60000; font-size: 18px; }
+
+.cancellation-policy {
+  text-align: center;
+  font-size: 12px;
+  color: #888;
+}
+
+/* Payment */
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pm-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  cursor: pointer;
+}
+
+.pm-option.selected {
+  border-color: #C60000;
+  background: #FFF0F0;
+}
+
+.pm-info h4 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+.pm-info p { margin: 0; font-size: 12px; color: #666; }
+
+.payment-bar {
+  display: flex;
+  flex-direction: column;
+}
+
+.total-amount-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 16px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.total-amount-row .price { color: #C60000; font-size: 20px; }
+
+/* Confirmation */
+.confirmation-view { align-items: center; text-align: center; padding-top: 60px; }
+.success-icon {
+  width: 80px; height: 80px; background: #4CAF50; color: white;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 40px; margin-bottom: 24px;
+}
+.confirmation-view h2 { font-size: 24px; margin-bottom: 8px; }
+.conf-sub { color: #666; margin-bottom: 32px; }
+
+.conf-details-card {
+  width: 100%;
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* Reservations List */
+.reservation-card {
+  display: flex;
+  gap: 16px;
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.rc-img { width: 80px; height: 80px; border-radius: 8px; }
+.rc-info h4 { margin: 0 0 4px; font-size: 16px; font-weight: 700; }
+.rc-info p { margin: 0 0 4px; font-size: 13px; color: #666; }
+.badge-confirmed {
+  display: inline-block;
+  background: #E8F5E9;
+  color: #2E7D32;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+/* Open Play List */
+.op-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.op-list-info h4 { margin: 0 0 4px; font-size: 16px; font-weight: 700; }
+.op-list-info p { margin: 0 0 4px; font-size: 13px; color: #666; }
+.op-list-info .price { font-weight: 700; color: #1a1a1a; margin-top: 8px; }
+
+/* QR Code */
+.qr-container {
+  background: #C60000;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.qr-header {
+  padding: 16px;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.qr-box {
+  background: white;
+  padding: 24px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.qr-footer {
+  padding: 16px;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+
+ 
+/* --- Book A Court Styles --- */
+.book-court-wrapper {
+  background-color: #FAFAFA;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  margin: -20px;
+}
+.bc-header-blue {
+  background-color: #C60000;
+  padding: 40px 20px 0;
+  position: relative;
+}
+.bc-back-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 12px;
+}
+.bc-date-title {
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+}
+.bc-calendar-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 20px;
+}
+.bc-calendar-strip::-webkit-scrollbar {
+  display: none;
+}
+.bc-cal-day {
+  background: rgba(255,255,255,0.2);
+  border-radius: 12px;
+  min-width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0;
+  color: white;
+  cursor: pointer;
+}
+.bc-cal-day.selected {
+  background: white;
+  color: #C60000;
+}
+.bc-cal-day.selected .bc-day-name { color: #C60000; }
+.bc-cal-day.selected .bc-day-num { color: #C60000; }
+.bc-day-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 4px;
+}
+.bc-day-num {
+  font-size: 16px;
+  font-weight: 700;
+}
+.bc-mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px;
+  background: #f5f7fa;
+}
+.bc-mode-btn {
+  background: white;
+  border: 1px solid #ddd;
+  padding: 8px 24px;
+  border-radius: 20px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.bc-mode-btn.active {
+  background: #C60000;
+  color: white;
+  border-color: #C60000;
+}
+.bc-body {
+  padding: 0 20px 40px;
+  background: #fff;
+}
+.bc-court-headers {
+  display: flex;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+.bc-ch {
+  flex: 2;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: #999;
+}
+.bc-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #666;
+}
+.lg-title { margin-right: auto; }
+.lg-item { display: flex; align-items: center; gap: 6px; }
+.lg-color { width: 24px; height: 12px; border-radius: 6px; }
+.lg-color.open { background: #C60000; }
+.lg-color.booked { background: #f0f0f0; }
+.lg-color.na { border: 1px dashed #ccc; background: white; }
+.bc-slots { display: flex; flex-direction: column; gap: 12px; }
+.bc-slot-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 12px;
+}
+.bc-time-col { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.bc-time { font-size: 14px; font-weight: 700; color: #333; }
+.bc-price { font-size: 11px; color: #999; }
+.bc-court-col { flex: 2; padding: 0 4px; }
+.bc-slot-btn {
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+.bc-slot-btn.open { background: #C60000; color: white; }
+.bc-slot-btn.booked { background: #f5f5f5; color: #bbb; cursor: not-allowed; }
+.bc-slot-btn.na { background: white; border: 1px dashed #ccc; color: #bbb; cursor: not-allowed; }
+
+/* Open Play View */
+.bc-open-play-view {
+  display: flex;
+  justify-content: center;
+}
+.bc-op-card {
+  background: #FFF0F0;
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+}
+.bc-op-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.bc-op-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #C60000;
+  max-width: 60%;
+}
+.bc-op-price {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  color: #C60000;
+  line-height: 1.1;
+}
+.bc-op-sub {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 24px;
+}
+.bc-op-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.bc-op-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #FFE0E0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bc-op-progress-fill {
+  height: 100%;
+  background: #C60000;
+  border-radius: 4px;
+}
+.bc-op-spots {
+  font-size: 11px;
+  font-weight: 700;
+  color: #C60000;
+}
+.bc-op-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #999;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+.bc-op-players-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bc-player {
+  background: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #C60000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dot.green { background: #4CAF50; width: 8px; height: 8px; border-radius: 50%; }
+.dot.orange { background: #FF9800; width: 8px; height: 8px; border-radius: 50%; }
+.bc-op-join-btn {
+  width: 100%;
+  background: #C60000;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 24px;
+  cursor: pointer;
+}
