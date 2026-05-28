@@ -122,7 +122,7 @@ export default function Login({
     }
   }
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
@@ -143,7 +143,6 @@ export default function Login({
     }
 
     const newCust = {
-      id: Date.now(),
       fullname: regName,
       email: regEmail.toLowerCase(),
       phone: regPhone,
@@ -152,8 +151,14 @@ export default function Login({
       status: 'active',
     }
 
-    onRegisterCustomer?.(newCust)
-    onLogin?.(newCust)
+    try {
+      if (onRegisterCustomer) {
+        const savedUser = await onRegisterCustomer(newCust)
+        onLogin?.(savedUser)
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to register account.')
+    }
   }
 
   return (

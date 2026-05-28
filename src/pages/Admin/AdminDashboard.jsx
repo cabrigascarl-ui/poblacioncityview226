@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { api } from '../../api'
 import './AdminDashboard.css'
 
 export default function AdminDashboard({ 
@@ -8,7 +9,8 @@ export default function AdminDashboard({
   orders, 
   promotions, setPromotions, 
   staff, setStaff, 
-  riders, setRiders 
+  riders, setRiders,
+  gameManagers, setGameManagers
 }) {
   const [tab, setTab] = useState('dashboard')
   
@@ -30,29 +32,46 @@ export default function AdminDashboard({
   const [notifMsg, setNotifMsg] = useState('')
   const [notifSent, setNotifSent] = useState(false)
 
-  // Add Stall/Rider state
+  // Add Stall/Rider/GM state
   const [isAddStallOpen, setIsAddStallOpen] = useState(false)
   const [newStall, setNewStall] = useState({ stall_name: '', category: '', logo: '', username: '', password: '', status: 'active' })
 
   const [isAddRiderOpen, setIsAddRiderOpen] = useState(false)
   const [newRider, setNewRider] = useState({ fullname: '', vehicle: '', phone: '', email: '', password: '', status: 'active' })
 
-  const handleAddStall = () => {
+  const [isAddGameManagerOpen, setIsAddGameManagerOpen] = useState(false)
+  const [newGameManager, setNewGameManager] = useState({ fullname: '', email: '', password: '' })
+
+  const handleAddStall = async () => {
     if (!newStall.stall_name || !newStall.username || !newStall.password) return
-    const id = stalls.length ? Math.max(...stalls.map(s => s.id)) + 1 : 1
-    const stallData = { ...newStall, id, desc: '', hours: '9:00 AM - 9:00 PM', delivery_fee: 15, delivery_time: '20-30 min' }
-    setStalls(prev => [...prev, stallData])
-    setIsAddStallOpen(false)
-    setNewStall({ stall_name: '', category: '', logo: '', username: '', password: '', status: 'active' })
+    try {
+      const stallData = { ...newStall, desc: '', hours: '9:00 AM - 9:00 PM', delivery_fee: 15, delivery_time: '20-30 min' }
+      const saved = await api.addStall(stallData)
+      setStalls(prev => [...prev, saved])
+      setIsAddStallOpen(false)
+      setNewStall({ stall_name: '', category: '', logo: '', username: '', password: '', status: 'active' })
+    } catch (err) { alert(err.message) }
   }
 
-  const handleAddRider = () => {
+  const handleAddRider = async () => {
     if (!newRider.fullname || !newRider.email || !newRider.password) return
-    const id = riders.length ? Math.max(...riders.map(r => r.id)) + 1 : 1
-    const riderData = { ...newRider, id, location: { lat: 11.7760, lng: 124.8865 } }
-    setRiders(prev => [...prev, riderData])
-    setIsAddRiderOpen(false)
-    setNewRider({ fullname: '', vehicle: '', phone: '', email: '', password: '', status: 'active' })
+    try {
+      const riderData = { ...newRider, location: { lat: 11.7760, lng: 124.8865 } }
+      const saved = await api.addRider(riderData)
+      setRiders(prev => [...prev, saved])
+      setIsAddRiderOpen(false)
+      setNewRider({ fullname: '', vehicle: '', phone: '', email: '', password: '', status: 'active' })
+    } catch (err) { alert(err.message) }
+  }
+
+  const handleAddGameManager = async () => {
+    if (!newGameManager.fullname || !newGameManager.email || !newGameManager.password) return
+    try {
+      const saved = await api.addGameManager(newGameManager)
+      setGameManagers(prev => [saved, ...prev])
+      setIsAddGameManagerOpen(false)
+      setNewGameManager({ fullname: '', email: '', password: '' })
+    } catch (err) { alert(err.message) }
   }
 
   const defaultAdminAvatar = "https://ui-avatars.com/api/?name=Admin&background=E8001C&color=fff"
@@ -607,6 +626,7 @@ export default function AdminDashboard({
           { label:'Promotions',   icon:'🏷️', tab:'promotions',    color:'#E8001C' },
           { label:'Customers',    icon:'👥', tab:'customers',     color:'#2D9CDB' },
           { label:'Transactions', icon:'💳', tab:'transactions',  color:'#00B050' },
+          { label:'Game Managers',icon:'🎾', tab:'gamemanagers',  color:'#E8001C' },
           { label:'Notifications',icon:'🔔', tab:'notifications', color:'#F2994A' },
         ].map(item => (
           <div key={item.tab} className="ad-menu-item" onClick={() => setTab(item.tab)}>
@@ -956,6 +976,38 @@ export default function AdminDashboard({
     )
   }
 
+  // ── Game Managers page ─────────────────────────────────────────────────────
+  const renderGameManagers = () => {
+    return (
+      <div className="ad-page-container">
+        <div className="ad-header">
+          <div className="ad-header-left">
+            <button className="ad-menu-btn" onClick={() => setTab('more')}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <span className="ad-header-title" style={{marginLeft: 16}}>Game Managers</span>
+          </div>
+          <div className="ad-header-right">
+            <button className="ad-icon-btn" onClick={() => setIsAddGameManagerOpen(true)}><PlusIcon /></button>
+          </div>
+        </div>
+        <div className="ad-list-container" style={{paddingBottom:40}}>
+          {gameManagers.map(gm => (
+            <div key={gm.id} className="ad-card-item">
+              <div style={{display:'flex',alignItems:'center',gap:14}}>
+                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(gm.fullname)}&background=E8001C&color=fff`} alt={gm.fullname} style={{width:52,height:52,borderRadius:'50%',flexShrink:0}} />
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:800,fontSize:16,marginBottom:3}}>{gm.fullname}</div>
+                  <div style={{fontSize:13,color:'#666'}}>{gm.email}</div>
+                  <div style={{fontSize:12,color:'#999',marginTop:2}}>Joined: {new Date(gm.created_at).toLocaleDateString()}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {gameManagers.length === 0 && <div className="ad-empty-state">No Game Managers yet</div>}
+        </div>
+      </div>
+    )
+  }
+
   const renderContent = () => {
     switch (tab) {
       case 'dashboard':    return renderDashboard();
@@ -967,13 +1019,14 @@ export default function AdminDashboard({
       case 'promotions':   return renderPromotions();
       case 'customers':    return renderCustomers();
       case 'transactions': return renderTransactions();
+      case 'gamemanagers': return renderGameManagers();
       case 'notifications':return renderNotifications();
       default:             return renderDashboard();
     }
   }
 
   // Which tab to highlight — sub-pages under More still highlight More
-  const moreSubTabs = ['analytics','promotions','customers','transactions','notifications']
+  const moreSubTabs = ['analytics','promotions','customers','transactions','notifications','gamemanagers']
   const activeTab = moreSubTabs.includes(tab) ? 'more' : tab
 
   return (
@@ -1079,5 +1132,33 @@ export default function AdminDashboard({
         </div>
       )}
     </div>
+      {isAddGameManagerOpen && (
+        <div className="ad-modal-overlay">
+          <div className="ad-modal-content">
+            <div className="ad-modal-header">
+              <span className="ad-modal-title">Add Game Manager</span>
+              <button className="ad-modal-close" onClick={() => setIsAddGameManagerOpen(false)}>✕</button>
+            </div>
+            <div className="ad-modal-body">
+              <div className="ad-form-group">
+                <label className="ad-form-label">Full Name</label>
+                <input type="text" className="ad-form-input" placeholder="e.g. Maria Clara" value={newGameManager.fullname} onChange={e => setNewGameManager({...newGameManager, fullname: e.target.value})} />
+              </div>
+              <div className="ad-form-group">
+                <label className="ad-form-label">Login Email</label>
+                <input type="email" className="ad-form-input" placeholder="e.g. maria@poblago.com" value={newGameManager.email} onChange={e => setNewGameManager({...newGameManager, email: e.target.value})} />
+              </div>
+              <div className="ad-form-group">
+                <label className="ad-form-label">Login Password</label>
+                <input type="password" className="ad-form-input" placeholder="Enter password" value={newGameManager.password} onChange={e => setNewGameManager({...newGameManager, password: e.target.value})} />
+              </div>
+            </div>
+            <div className="ad-modal-footer">
+              <button className="ad-btn-cancel" onClick={() => setIsAddGameManagerOpen(false)}>Cancel</button>
+              <button className="ad-btn-submit" onClick={handleAddGameManager}>Add Game Manager</button>
+            </div>
+          </div>
+        </div>
+      )}
   )
 }

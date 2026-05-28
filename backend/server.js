@@ -34,9 +34,19 @@ app.post('/api/auth/login', async (req, res) => {
     if ((email === 'admin' || email === 'admin@pobla.go') && password === 'admin')
       return res.json({ role: 'admin', user: { fullname: 'Admin', email } });
 
-    // Games Manager hardcoded
+    // Games Manager hardcoded fallback
     if ((email === 'games' || email === 'games@pobla.go') && password === 'games')
       return res.json({ role: 'game-manager', user: { fullname: 'Games Manager', email } });
+
+    // Games Manager from DB
+    const gm = await db.request()
+      .input('email', sql.NVarChar, email)
+      .input('password', sql.NVarChar, password)
+      .query(`SELECT * FROM game_managers WHERE email = @email AND password = @password`);
+    if (gm.recordset.length > 0) {
+      const u = gm.recordset[0];
+      return res.json({ role: 'game-manager', user: u });
+    }
 
     // Customer
     const cust = await db.request()
@@ -401,6 +411,33 @@ app.put('/api/court-prices', async (req, res) => {
         close_hour=@close_hour, max_players=@max_players, notes=@notes, updated_at=GETDATE()`);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── GAME MANAGERS ───────────────────────────────────────────
+app.get('/api/game-managers', async (req, res) => {
+  try {
+    const db = await getPool();
+    const result = await db.request().query('SELECT id, fullname, email, created_at FROM game_managers ORDER BY created_at DESC');
+    res.json(result.recordset);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/game-managers', async (req, res) => {
+  const { fullname, email, password } = req.body;
+  try {
+    const db = await getPool();
+    const result = await db.request()
+      .input('fullname', sql.NVarChar, fullname)
+      .input('email', sql.NVarChar, email)
+      .input('password', sql.NVarChar, password)
+      .query(`INSERT INTO game_managers (fullname, email, password)
+              OUTPUT INSERTED.id, INSERTED.fullname, INSERTED.email, INSERTED.created_at
+              VALUES (@fullname, @email, @password)`);
+    res.json(result.recordset[0]);
+  } catch (err) {
+    if (err.message.includes('UNIQUE')) return res.status(400).json({ error: 'Email already registered.' });
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── HEALTH CHECK ────────────────────────────────────────────

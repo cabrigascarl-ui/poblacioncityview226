@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:5000/api';
+const BASE = 'https://poblacioncityview26.onrender.com/api';
 
 async function req(method, path, body) {
   const res = await fetch(`${BASE}${path}`, {
@@ -54,4 +54,8 @@ export const api = {
   // Court Prices
   getCourtPrices: () => req('GET', '/court-prices'),
   updateCourtPrices: (data) => req('PUT', '/court-prices', data),
+
+  // Game Managers
+  getGameManagers: () => req('GET', '/game-managers'),
+  addGameManager: (data) => req('POST', '/game-managers', data),
 };

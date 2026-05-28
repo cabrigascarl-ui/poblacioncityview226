@@ -35,6 +35,7 @@ export default function App() {
   const [foods,       setFoods]       = useState([])
   const [orders,      setOrders]      = useState([])
   const [promotions,  setPromotions]  = useState([])
+  const [gameManagers,setGameManagers]  = useState([])
   const [dbLoaded,    setDbLoaded]    = useState(false)
 
   // ── Load all data from Azure on startup ──
@@ -49,6 +50,7 @@ export default function App() {
           api.getFoods(),
           api.getOrders(),
           api.getPromotions(),
+          api.getGameManagers(),
         ])
         setCustomers(c)
         setStalls(s)
@@ -56,6 +58,7 @@ export default function App() {
         setFoods(f)
         setOrders(o)
         setPromotions(p)
+        setGameManagers(gm)
         console.log('✅ Data loaded from Azure SQL')
       } catch (err) {
         console.warn('⚠️ Could not load from Azure, running offline:', err.message)
@@ -264,8 +267,7 @@ export default function App() {
                 setCustomers(prev => [...prev, saved])
                 return saved
               } catch (err) {
-                setCustomers(prev => [...prev, newCust])
-                return newCust
+                throw err;
               }
             }}
             onGuest={() => {
@@ -418,6 +420,8 @@ export default function App() {
             setStaff={setStaff}
             riders={riders}
             setRiders={setRiders}
+            gameManagers={gameManagers}
+            setGameManagers={setGameManagers}
           />
         )
 

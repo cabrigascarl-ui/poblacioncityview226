@@ -169,6 +169,18 @@ async function setup() {
     `);
     console.log('✓ court_prices table ready');
 
+    await pool.request().query(`
+      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='game_managers' AND xtype='U')
+      CREATE TABLE game_managers (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        fullname NVARCHAR(100) NOT NULL,
+        email NVARCHAR(100) NOT NULL UNIQUE,
+        password NVARCHAR(100) NOT NULL,
+        created_at DATETIME DEFAULT GETDATE()
+      )
+    `);
+    console.log('✓ game_managers table ready');
+
     console.log('\n✅ All tables created successfully! Database is ready.');
     process.exit(0);
   } catch (err) {
