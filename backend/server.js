@@ -9,10 +9,10 @@ app.use(express.json());
 
 // ── DB Config ──────────────────────────────────────────────
 const config = {
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  server: process.env.DB_SERVER,
-  database: process.env.DB_DATABASE,
+  user: 'admincicto',
+  password: '1Kutob10',
+  server: 'alterdb.database.windows.net',
+  database: 'PoblaDatabaseN',
   options: { encrypt: true, trustServerCertificate: false },
   port: parseInt(process.env.DB_PORT) || 1433,
   pool: { max: 10, min: 0, idleTimeoutMillis: 30000 }
