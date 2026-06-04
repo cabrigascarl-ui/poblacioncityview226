@@ -1,120 +1,73 @@
-import { db, auth } from './firebase.js';
-import { ref, get, set, push, update, remove, onValue } from 'firebase/database';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+const API_URL = 'http://localhost:5000/api';
 
-// Helper to get all items as an array from RTDB
-async function fetchAll(pathName) {
-  const snapshot = await get(ref(db, pathName));
-  if (!snapshot.exists()) return [];
-  const data = snapshot.val();
-  return Object.keys(data).map(key => ({ id: key, ...data[key] }));
+// Helper for standard GET requests
+async function fetchAll(endpoint) {
+  const res = await fetch(`${API_URL}/${endpoint}`);
+  if (!res.ok) throw new Error(`Failed to fetch ${endpoint}`);
+  return await res.json();
 }
 
-// Helper to add an item
-async function add(pathName, data) {
-  const newRef = push(ref(db, pathName));
-  const newDoc = { ...data, created_at: new Date().toISOString() };
-  await set(newRef, newDoc);
-  return { id: newRef.key, ...newDoc };
+// Helper for POST requests
+async function add(endpoint, data) {
+  const res = await fetch(`${API_URL}/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return await res.json();
 }
 
-// Helper to update an item
-async function updateItem(pathName, id, data) {
-  const itemRef = ref(db, `${pathName}/${id}`);
-  await update(itemRef, data);
-  return { id, ...data };
+// Helper for PATCH requests
+async function updateItem(endpoint, id, data) {
+  const res = await fetch(`${API_URL}/${endpoint}/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return await res.json();
 }
 
-// Helper to delete an item
-async function del(pathName, id) {
-  await remove(ref(db, `${pathName}/${id}`));
+// Helper for DELETE requests
+async function del(endpoint, id) {
+  const res = await fetch(`${API_URL}/${endpoint}/${id}`, {
+    method: 'DELETE'
+  });
+  if (!res.ok) throw new Error(await res.text());
   return { id };
 }
 
-// Helper to subscribe to a path
-function subscribe(pathName, callback) {
-  return onValue(ref(db, pathName), (snapshot) => {
-    if (!snapshot.exists()) {
-      callback([]);
-      return;
-    }
-    const data = snapshot.val();
-    const arr = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-    callback(arr);
-  });
+// Real-time polling fallback since Azure SQL doesn't have native WebSockets like Firebase
+function subscribe(endpoint, callback) {
+  // Initial fetch
+  fetchAll(endpoint).then(callback).catch(console.error);
+  
+  // Poll every 3 seconds to mimic Firebase Realtime updates
+  const intervalId = setInterval(() => {
+    fetchAll(endpoint).then(callback).catch(console.error);
+  }, 3000);
+  
+  // Return an unsubscribe function
+  return () => clearInterval(intervalId);
 }
 
 export const api = {
   // Auth
   login: async (email, password) => {
-    // 1. Admin hardcoded
-    if ((email === 'admin' || email === 'admin@pobla.go') && password === 'admin')
-      return { role: 'admin', user: { fullname: 'Admin', email } };
-
-    // 2. Games Manager hardcoded fallback
-    if ((email === 'games' || email === 'games@pobla.go') && password === 'games')
-      return { role: 'game-manager', user: { fullname: 'Games Manager', email } };
-
-    const checkPath = async (pathName, role) => {
-      const items = await fetchAll(pathName);
-      const field = pathName === 'stalls' ? 'username' : 'email';
-      const found = items.find(i => i[field]?.toLowerCase() === email.toLowerCase());
-      
-      if (found) {
-        if (found.status === 'suspended') throw new Error('Account suspended.');
-        return { role, user: found, plain_password: found.password };
-      }
-      return null;
-    };
-
-    let record = await checkPath('game_managers', 'game-manager') ||
-                 await checkPath('customers', 'customer') ||
-                 await checkPath('stalls', 'stall') ||
-                 await checkPath('riders', 'rider');
-
-    if (!record) {
-      throw new Error('Invalid email or password.');
-    }
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      // Fallback for old users who haven't been migrated to Firebase Auth yet
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials' || error.code === 'auth/wrong-password') {
-        if (record.plain_password === password) {
-          try {
-             // Auto-migrate user
-             await createUserWithEmailAndPassword(auth, email, password);
-          } catch(e) {
-             console.error("Firebase Auth migration failed:", e.message);
-          }
-        } else {
-          throw new Error('Invalid email or password.');
-        }
-      } else {
-        throw new Error(error.message);
-      }
-    }
-
-    return { role: record.role, user: record.user };
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (!res.ok) throw new Error((await res.json()).error || 'Login failed');
+    return await res.json(); // { role, user }
   },
 
   // Customers
   getCustomers: () => fetchAll('customers'),
   subscribeCustomers: (cb) => subscribe('customers', cb),
-  addCustomer: async (data) => {
-    const items = await fetchAll('customers');
-    const exists = items.find(i => i.email?.toLowerCase() === data.email.toLowerCase());
-    if (exists) throw new Error('Email already registered.');
-    
-    try {
-      await createUserWithEmailAndPassword(auth, data.email, data.password);
-    } catch (error) {
-      throw new Error(error.message);
-    }
-    
-    return add('customers', data);
-  },
+  addCustomer: (data) => add('customers', data),
   updateCustomer: (id, data) => updateItem('customers', id, data),
 
   // Stalls
@@ -157,20 +110,23 @@ export const api = {
 
   // Court Prices
   getCourtPrices: async () => {
-    const prices = await fetchAll('court_prices');
-    if (prices.length > 0) return prices;
+    try {
+      const res = await fetch(`${API_URL}/court-prices`);
+      if (res.ok) return [await res.json()];
+    } catch(e) {}
     return [{ morning_rate: 200, afternoon_rate: 280, open_play_rate: 150 }];
   },
   updateCourtPrices: async (data) => {
-    const prices = await fetchAll('court_prices');
-    if (prices.length > 0) {
-      return updateItem('court_prices', prices[0].id, data);
-    } else {
-      return add('court_prices', data);
-    }
+    const res = await fetch(`${API_URL}/court-prices`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return await res.json();
   },
 
   // Game Managers
-  getGameManagers: () => fetchAll('game_managers'),
-  addGameManager: (data) => add('game_managers', data),
+  getGameManagers: () => fetchAll('game-managers'),
+  addGameManager: (data) => add('game-managers', data),
 };
