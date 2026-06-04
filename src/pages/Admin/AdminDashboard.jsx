@@ -2,6 +2,28 @@ import { useState, useMemo } from 'react'
 import { api } from '../../api'
 import './AdminDashboard.css'
 
+// Icons
+const MenuIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+const LogoIcon = () => (
+  <div className="ad-header-logo">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="#E8001C"><path d="M12 2L15 12L24 14L15 16L12 24L9 16L0 14L9 12L12 2Z"/></svg>
+    <div style={{display:'flex', flexDirection:'column'}}>
+      Poblacion
+      <span className="ad-header-logo-sub">ADMIN PORTAL</span>
+    </div>
+  </div>
+)
+const BellIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+const WalletIcon = ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12V7H5a2 2 0 0 1 2-2h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
+const SearchIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+const FilterIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+const PlusIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E8001C" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+const PhoneIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+const CalendarIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+const DotsMenuIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+const ChartIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+const StarIcon = ({ size = 14 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="#F2C94C"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+
 export default function AdminDashboard({ 
   onLogout, 
   stalls, setStalls, 
@@ -42,6 +64,9 @@ export default function AdminDashboard({
   const [isAddGameManagerOpen, setIsAddGameManagerOpen] = useState(false)
   const [newGameManager, setNewGameManager] = useState({ fullname: '', email: '', password: '' })
 
+  const [isEditStallOpen, setIsEditStallOpen] = useState(false)
+  const [editingStall, setEditingStall] = useState(null)
+
   const handleAddStall = async () => {
     if (!newStall.stall_name || !newStall.username || !newStall.password) return
     try {
@@ -50,6 +75,24 @@ export default function AdminDashboard({
       setStalls(prev => [...prev, saved])
       setIsAddStallOpen(false)
       setNewStall({ stall_name: '', category: '', logo: '', username: '', password: '', status: 'active' })
+    } catch (err) { alert(err.message) }
+  }
+
+  const handleEditStall = async () => {
+    if (!editingStall.stall_name) return
+    try {
+      const saved = await api.updateStall(editingStall.id, editingStall)
+      setStalls(prev => prev.map(s => s.id === saved.id ? saved : s))
+      setIsEditStallOpen(false)
+      setEditingStall(null)
+    } catch (err) { alert(err.message) }
+  }
+
+  const handleDeleteStall = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this stall? This action cannot be undone.")) return;
+    try {
+      await api.deleteStall(id);
+      setStalls(prev => prev.filter(s => s.id !== id));
     } catch (err) { alert(err.message) }
   }
 
@@ -76,27 +119,7 @@ export default function AdminDashboard({
 
   const defaultAdminAvatar = "https://ui-avatars.com/api/?name=Admin&background=E8001C&color=fff"
 
-  // Icons
-  const MenuIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-  const LogoIcon = () => (
-    <div className="ad-header-logo">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="#E8001C"><path d="M12 2L15 12L24 14L15 16L12 24L9 16L0 14L9 12L12 2Z"/></svg>
-      <div style={{display:'flex', flexDirection:'column'}}>
-        Poblacion
-        <span className="ad-header-logo-sub">ADMIN PORTAL</span>
-      </div>
-    </div>
-  )
-  const BellIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-  const WalletIcon = ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12V7H5a2 2 0 0 1 2-2h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
-  const SearchIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-  const FilterIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-  const PlusIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E8001C" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-  const PhoneIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-  const CalendarIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-  const DotsMenuIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-  const ChartIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-  const StarIcon = ({ size = 14 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="#F2C94C"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+
 
   // Derived Data
   const totalSales = orders.filter(o => o.status === 'Delivered').reduce((sum, o) => sum + o.total_price, 0)
@@ -113,7 +136,7 @@ export default function AdminDashboard({
 
   // Status mapping for Order Pill CSS classes
   const mapOrderStatusClass = (status) => {
-    const s = status.toLowerCase()
+    const s = (status || '').toLowerCase()
     if (s.includes('pending')) return 'pending'
     if (s.includes('preparing') || s.includes('ready')) return 'preparing'
     if (s.includes('delivery') || s.includes('delivering')) return 'out-for-delivery'
@@ -167,9 +190,6 @@ export default function AdminDashboard({
         <div>
           <div className="ad-rc-title">Total Sales</div>
           <div className="ad-rc-amount">{formatCurrency(totalSales)}</div>
-          <div className="ad-rc-diff">
-            <span className="positive">+15%</span> vs yesterday
-          </div>
         </div>
         <div className="ad-rc-icon">
           <WalletIcon size={24} />
@@ -185,7 +205,6 @@ export default function AdminDashboard({
             </div>
           </div>
           <div className="ad-sb-value">{totalOrders}</div>
-          <div className="ad-sb-sub"><span className="positive">+12%</span><br/>vs yesterday</div>
         </div>
         <div className="ad-stat-box">
           <div className="ad-sb-header">
@@ -215,7 +234,6 @@ export default function AdminDashboard({
             </div>
           </div>
           <div className="ad-sb-value">{totalCustomers}</div>
-          <div className="ad-sb-sub"><span className="positive">+15%</span><br/>vs yesterday</div>
         </div>
       </div>
 
@@ -308,6 +326,11 @@ export default function AdminDashboard({
     </div>
   )
 
+  const formatItems = (items) => {
+    if (Array.isArray(items)) return items.map(i => `${i.qty}x ${i.name || i.food_name || 'Item'}`).join(', ');
+    return String(items || '');
+  }
+
   const renderOrders = () => {
     let filteredOrders = orders.filter(o => {
       if (ordersSearch) {
@@ -371,7 +394,7 @@ export default function AdminDashboard({
               </div>
               <div className="ad-oc-footer">
                 <span className="ad-oc-details" style={{textOverflow: 'ellipsis', whiteSpace:'nowrap', overflow:'hidden', maxWidth: '60%'}}>
-                  {order.items} • {getStallName(order.stall_id)}
+                  {formatItems(order.items)} • {getStallName(order.stall_id)}
                 </span>
                 <span className={`ad-status-pill ${mapOrderStatusClass(order.status)}`}>{order.status}</span>
               </div>
@@ -411,7 +434,7 @@ export default function AdminDashboard({
 
   const renderStalls = () => {
     let filteredStalls = stalls.filter(s => {
-      if (stallsSearch && !s.stall_name.toLowerCase().includes(stallsSearch.toLowerCase())) return false;
+      if (stallsSearch && !(s.stall_name || '').toLowerCase().includes(stallsSearch.toLowerCase())) return false;
       if (stallsFilter === 'Open') return s.status === 'active';
       if (stallsFilter === 'Closed') return s.status !== 'active';
       return true;
@@ -468,7 +491,14 @@ export default function AdminDashboard({
               <div className={`ad-outline-badge ${stall.status === 'active' ? 'open' : 'closed'}`}>
                 {stall.status === 'active' ? 'Open' : 'Closed'}
               </div>
-              <div className="ad-dots-menu"><DotsMenuIcon /></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div onClick={() => { setEditingStall(stall); setIsEditStallOpen(true); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{fontSize: 12, fontWeight: 700, color: '#0066cc'}}>Edit</span>
+                </div>
+                <div onClick={() => handleDeleteStall(stall.id)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{fontSize: 12, fontWeight: 700, color: '#E8001C'}}>Delete</span>
+                </div>
+              </div>
             </div>
           ))}
           {filteredStalls.length === 0 && <div style={{textAlign:'center', color:'#888', marginTop: 20}}>No stalls found</div>}
@@ -505,7 +535,7 @@ export default function AdminDashboard({
 
   const renderRiders = () => {
     let filteredRiders = riders.filter(r => {
-      if (ridersSearch && !r.fullname.toLowerCase().includes(ridersSearch.toLowerCase())) return false;
+      if (ridersSearch && !(r.fullname || '').toLowerCase().includes(ridersSearch.toLowerCase())) return false;
       if (ridersFilter === 'Online') return r.status === 'active';
       if (ridersFilter === 'Offline') return r.status !== 'active';
       return true;
@@ -675,9 +705,6 @@ export default function AdminDashboard({
         <div>
           <div className="ad-rc-title">Total Sales</div>
           <div className="ad-rc-amount">{formatCurrency(totalSales)}</div>
-          <div className="ad-rc-diff">
-            <span className="positive" style={{color: '#00FF85', background: 'rgba(0, 255, 133, 0.15)'}}>+15%</span> vs last week
-          </div>
         </div>
         <div className="ad-rc-icon" style={{background: 'none', border: 'none'}}>
           <ChartIcon />
@@ -762,10 +789,9 @@ export default function AdminDashboard({
 
   // ── Promotions page ────────────────────────────────────────────────────────
   const renderPromotions = () => {
-    const handleAddPromo = () => {
+    const handleAddPromo = async () => {
       if (!promoForm.msg.trim() && !promoForm.imageUrl.trim()) return
       const newPromo = { 
-        id: Date.now(), 
         msg: promoForm.msg, 
         subtitle: promoForm.msg,
         imageUrl: promoForm.imageUrl, 
@@ -774,12 +800,24 @@ export default function AdminDashboard({
         target: promoForm.target,
         time: 'Just now' 
       }
-      setPromotions(prev => [newPromo, ...prev])
-      setPromoForm({ msg: '', imageUrl: '', pretitle: '', title: '', target: 'Home' })
-      setPromoSuccess(true)
-      setTimeout(() => setPromoSuccess(false), 2500)
+      try {
+        const saved = await api.addPromotion(newPromo)
+        setPromotions(prev => [saved, ...prev])
+        setPromoForm({ msg: '', imageUrl: '', pretitle: '', title: '', target: 'Home' })
+        setPromoSuccess(true)
+        setTimeout(() => setPromoSuccess(false), 2500)
+      } catch (err) {
+        alert('Failed to add promotion: ' + err.message)
+      }
     }
-    const handleDeletePromo = (id) => setPromotions(prev => prev.filter(p => p.id !== id))
+    const handleDeletePromo = async (id) => {
+      try {
+        await api.deletePromotion(id)
+        setPromotions(prev => prev.filter(p => p.id !== id))
+      } catch (err) {
+        alert('Failed to delete promotion: ' + err.message)
+      }
+    }
     return (
       <div className="ad-page-container">
         <div className="ad-header">
@@ -817,7 +855,19 @@ export default function AdminDashboard({
                 if (file) {
                   const reader = new FileReader();
                   reader.onloadend = () => {
-                    setPromoForm(f => ({...f, imageUrl: reader.result}));
+                    const img = new Image();
+                    img.onload = () => {
+                      const canvas = document.createElement('canvas');
+                      const MAX_WIDTH = 500;
+                      const scaleSize = MAX_WIDTH / img.width;
+                      canvas.width = MAX_WIDTH;
+                      canvas.height = img.height * scaleSize;
+                      const ctx = canvas.getContext('2d');
+                      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6); // Compress for Firebase DB limit
+                      setPromoForm(f => ({...f, imageUrl: compressedBase64}));
+                    };
+                    img.src = reader.result;
                   };
                   reader.readAsDataURL(file);
                 }
@@ -1095,6 +1145,50 @@ export default function AdminDashboard({
         </div>
       )}
 
+      {isEditStallOpen && editingStall && (
+        <div className="ad-modal-overlay">
+          <div className="ad-modal-content">
+            <div className="ad-modal-header">
+              <span className="ad-modal-title">Edit Stall</span>
+              <button className="ad-modal-close" onClick={() => setIsEditStallOpen(false)}>✕</button>
+            </div>
+            <div className="ad-modal-body">
+              <div className="ad-form-group">
+                <label className="ad-form-label">Stall Name</label>
+                <input type="text" className="ad-form-input" placeholder="e.g. Burger Hub" value={editingStall.stall_name} onChange={e => setEditingStall({...editingStall, stall_name: e.target.value})} />
+              </div>
+              <div className="ad-form-group">
+                <label className="ad-form-label">Category</label>
+                <select className="ad-form-input" value={editingStall.category} onChange={e => setEditingStall({...editingStall, category: e.target.value})}>
+                  <option value="">Select Category</option>
+                  <option value="Fast Food">Fast Food</option>
+                  <option value="Coffee & Drinks">Coffee & Drinks</option>
+                  <option value="Desserts">Desserts</option>
+                  <option value="Healthy">Healthy</option>
+                  <option value="Local Cuisine">Local Cuisine</option>
+                </select>
+              </div>
+              <div className="ad-form-group">
+                <label className="ad-form-label">Emoji / Logo</label>
+                <input type="text" className="ad-form-input" placeholder="e.g. 🍔" value={editingStall.logo} onChange={e => setEditingStall({...editingStall, logo: e.target.value})} />
+              </div>
+              <div className="ad-form-group">
+                <label className="ad-form-label">Status</label>
+                <select className="ad-form-input" value={editingStall.status} onChange={e => setEditingStall({...editingStall, status: e.target.value})}>
+                  <option value="active">Open</option>
+                  <option value="closed">Closed</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+            </div>
+            <div className="ad-modal-footer">
+              <button className="ad-btn-cancel" onClick={() => setIsEditStallOpen(false)}>Cancel</button>
+              <button className="ad-btn-submit" onClick={handleEditStall}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isAddRiderOpen && (
         <div className="ad-modal-overlay">
           <div className="ad-modal-content">
@@ -1131,7 +1225,6 @@ export default function AdminDashboard({
           </div>
         </div>
       )}
-    </div>
       {isAddGameManagerOpen && (
         <div className="ad-modal-overlay">
           <div className="ad-modal-content">
@@ -1160,5 +1253,6 @@ export default function AdminDashboard({
           </div>
         </div>
       )}
+    </div>
   )
 }

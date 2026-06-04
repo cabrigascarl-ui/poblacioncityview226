@@ -23,9 +23,19 @@ const CUSTOMER_SCREENS = ['home', 'orders', 'offers', 'games', 'account']
 // ─── Initial Database (loaded from Azure SQL) ──────────────────────────────
 
 export default function App() {
-  const [screen,  setScreen]  = useState('splash')
+  // ── Session States (Persisted) ──
+  const initialRole = localStorage.getItem('userRole') || null
+  const initialScreen = initialRole ? 
+    (initialRole === 'customer' ? 'home' : 
+     initialRole === 'stall' ? 'stall-dashboard' : 
+     initialRole === 'rider' ? 'rider-dashboard' : 
+     initialRole === 'admin' ? 'admin-dashboard' : 
+     initialRole === 'game manager' ? 'games-admin' : 'splash')
+    : 'splash'
+
+  const [screen,  setScreen]  = useState(initialScreen)
   const [history, setHistory] = useState([])
-  const [userRole, setUserRole] = useState(null) // 'customer' | 'stall' | 'rider' | 'admin'
+  const [userRole, setUserRole] = useState(initialRole) // 'customer' | 'stall' | 'rider' | 'admin' | 'game manager'
 
   // ── Database States (synced with Azure SQL) ──
   const [customers,   setCustomers]   = useState([])
@@ -38,45 +48,77 @@ export default function App() {
   const [gameManagers,setGameManagers]  = useState([])
   const [dbLoaded,    setDbLoaded]    = useState(false)
 
+  // Safe JSON parse helper to prevent crashes from "undefined" string in localStorage
+  const safeJsonParse = (key, fallback) => {
+    try {
+      const val = localStorage.getItem(key)
+      if (val === 'undefined') return fallback
+      return val ? JSON.parse(val) : fallback
+    } catch (e) {
+      console.warn(`Error parsing localStorage key "${key}":`, e)
+      return fallback
+    }
+  }
+
+  // ── Load all data from Azure on startup ──
+  // ── Session States (Persisted) ──
+  const [currentCustomer, setCurrentCustomer] = useState(() => safeJsonParse('currentCustomer', null))
+  const [currentStall,    setCurrentStall]    = useState(() => safeJsonParse('currentStall', null))
+  const [currentRider,    setCurrentRider]    = useState(() => safeJsonParse('currentRider', null))
+  const [currentStallId,  setCurrentStallId]  = useState(() => localStorage.getItem('currentStallId') || null)
+  const [currentTrackingOrder, setCurrentTrackingOrder] = useState(() => safeJsonParse('currentTrackingOrder', null))
+  const [cartItems, setCartItems] = useState(() => safeJsonParse('cartItems', []))
+  const [pendingPaymentDetails, setPendingPaymentDetails] = useState(null)
+
+  // Persist session state changes to localStorage
+  useEffect(() => { localStorage.setItem('currentCustomer', JSON.stringify(currentCustomer)) }, [currentCustomer])
+  useEffect(() => { localStorage.setItem('currentStall', JSON.stringify(currentStall)) }, [currentStall])
+  useEffect(() => { localStorage.setItem('currentRider', JSON.stringify(currentRider)) }, [currentRider])
+  useEffect(() => { localStorage.setItem('currentStallId', currentStallId || '') }, [currentStallId])
+  useEffect(() => { localStorage.setItem('currentTrackingOrder', JSON.stringify(currentTrackingOrder)) }, [currentTrackingOrder])
+  useEffect(() => { localStorage.setItem('cartItems', JSON.stringify(cartItems)) }, [cartItems])
+  useEffect(() => { if (userRole) { localStorage.setItem('userRole', userRole) } else { localStorage.removeItem('userRole') } }, [userRole])
+
   // ── Load all data from Azure on startup ──
   useEffect(() => {
-    async function loadFromAzure() {
-      try {
-        const [c, s, st, r, f, o, p] = await Promise.all([
-          api.getCustomers(),
-          api.getStalls(),
-          api.getRiders(),  // staff loaded via stalls login
-          api.getRiders(),
-          api.getFoods(),
-          api.getOrders(),
-          api.getPromotions(),
-          api.getGameManagers(),
-        ])
-        setCustomers(c)
-        setStalls(s)
-        setRiders(r)
-        setFoods(f)
-        setOrders(o)
-        setPromotions(p)
-        setGameManagers(gm)
-        console.log('✅ Data loaded from Azure SQL')
-      } catch (err) {
-        console.warn('⚠️ Could not load from Azure, running offline:', err.message)
-      } finally {
-        setDbLoaded(true)
-      }
-    }
-    loadFromAzure()
-  }, [])
+    // We use Real-time Listeners now instead of get()
+    const unsubs = [];
+    unsubs.push(api.subscribeCustomers(c => { setCustomers(c) }))
+    unsubs.push(api.subscribeStalls(s => { setStalls(s) }))
+    unsubs.push(api.subscribeRiders(r => { setRiders(r) }))
+    unsubs.push(api.subscribeFoods(f => { setFoods(f) }))
+    unsubs.push(api.subscribePromotions(p => { setPromotions(p) }))
+    
+    // Setup Audio Ringing for Stalls
+    let initialLoad = true;
+    unsubs.push(api.subscribeOrders(o => {
+      setOrders(prev => {
+        // If there's a new order and we are logged in as a stall, play a sound
+        if (!initialLoad && currentStall && o.length > prev.length) {
+          const latestOrder = o[o.length - 1];
+          if (latestOrder.stall_id === currentStall.id && latestOrder.status === 'Pending') {
+            try {
+              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+              audio.play();
+            } catch (e) {}
+          }
+        }
+        return o;
+      })
+      initialLoad = false;
+    }))
 
-  // ── Session States ──
-  const [currentCustomer, setCurrentCustomer] = useState(null)
-  const [currentStall,    setCurrentStall]    = useState(null)
-  const [currentRider,    setCurrentRider]    = useState(null)
-  const [currentStallId,  setCurrentStallId]  = useState(null)
-  const [currentTrackingOrder, setCurrentTrackingOrder] = useState(null)
-  const [cartItems, setCartItems] = useState([])
-  const [pendingPaymentDetails, setPendingPaymentDetails] = useState(null)
+    // Game Managers doesn't have subscribe yet, so fetch once
+    api.getGameManagers().then(gm => {
+      setGameManagers(gm)
+      setDbLoaded(true)
+    }).catch(err => {
+      console.warn('⚠️ Could not load GameManagers:', err.message)
+      setDbLoaded(true)
+    })
+
+    return () => unsubs.forEach(unsub => unsub && unsub());
+  }, [currentStall])
 
   // ── Navigation ──
   const nav  = (s) => { setHistory(h => [...h, screen]); setScreen(s) }
@@ -128,10 +170,13 @@ export default function App() {
   }
 
   const handleLogout = () => {
+    localStorage.clear()
     setUserRole(null)
     setCurrentCustomer(null)
     setCurrentStall(null)
     setCurrentRider(null)
+    setCurrentStallId(null)
+    setCurrentTrackingOrder(null)
     setCartItems([])
     setHistory([])
     setScreen('getstarted')
@@ -157,7 +202,7 @@ export default function App() {
     finalizeOrder(details)
   }
 
-  const finalizeOrder = (details) => {
+  const finalizeOrder = async (details) => {
     const groupId = `G${Math.floor(10000 + Math.random() * 90000)}`
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
@@ -170,15 +215,14 @@ export default function App() {
       byStall[sId].push(item)
     })
 
-    const newOrders = Object.keys(byStall).map(stallIdStr => {
-      const stallId = Number(stallIdStr)
+    const newOrdersPromises = Object.keys(byStall).map(async stallIdStr => {
+      const stallId = isNaN(Number(stallIdStr)) ? stallIdStr : Number(stallIdStr)
       const stallItems = byStall[stallIdStr]
       const itemsSummary = stallItems.map(i => `${i.qty}x ${i.food_name || i.name}`).join(', ')
       const stallTotal = stallItems.reduce((s, i) => s + i.price * i.qty, 0)
       const stallNote = details.notes?.[stallId] || details.notes || ''
 
-      return {
-        id: Math.floor(10000 + Math.random() * 90000),
+      const newOrderData = {
         customer_id: currentCustomer?.id,
         stall_id: stallId,
         rider_id: null,         // Assigned later when a Rider accepts
@@ -190,7 +234,18 @@ export default function App() {
         notes: stallNote,
         time: timestamp,
       }
+      
+      try {
+        const savedOrder = await api.addOrder(newOrderData)
+        return savedOrder
+      } catch (err) {
+        console.error('Failed to save order to Firebase:', err)
+        // Fallback to local order if offline
+        return { id: Math.floor(10000 + Math.random() * 90000).toString(), ...newOrderData }
+      }
     })
+
+    const savedOrders = await Promise.all(newOrdersPromises)
 
     // Also create a "virtual" master order object for the tracking screen
     const masterOrder = {
@@ -203,7 +258,7 @@ export default function App() {
       time: timestamp,
     }
 
-    setOrders(prev => [...prev, ...newOrders])
+    setOrders(prev => [...prev, ...savedOrders])
     setCartItems([])
     setCurrentTrackingOrder(masterOrder)
     nav('tracking')
@@ -221,9 +276,17 @@ export default function App() {
     }
   }
 
-  const handleUpdateStallProfile = (updatedStall) => {
-    setStalls(prev => prev.map(s => s.id === updatedStall.id ? updatedStall : s))
-    setCurrentStall(updatedStall)
+  const handleUpdateStallProfile = async (updatedStall) => {
+    try {
+      const saved = await api.updateStall(updatedStall.id, updatedStall)
+      setStalls(prev => prev.map(s => s.id === saved.id ? saved : s))
+      setCurrentStall(saved)
+    } catch (err) {
+      console.error('Failed to update stall profile:', err)
+      // Fallback
+      setStalls(prev => prev.map(s => s.id === updatedStall.id ? updatedStall : s))
+      setCurrentStall(updatedStall)
+    }
   }
 
   // ── Screen Renderer ──

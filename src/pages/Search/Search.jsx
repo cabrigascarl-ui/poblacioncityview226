@@ -17,16 +17,16 @@ export default function Search({ onRestaurant, onBack, stalls = [], foods = [] }
 
   // Filter items matching query
   const matchedStalls = q.trim() === '' ? [] : activeStalls.filter(s => 
-    s.stall_name.toLowerCase().includes(q.toLowerCase()) ||
-    s.category.toLowerCase().includes(q.toLowerCase()) ||
-    s.desc?.toLowerCase().includes(q.toLowerCase())
+    (s.stall_name || '').toLowerCase().includes(q.toLowerCase()) ||
+    (s.category || '').toLowerCase().includes(q.toLowerCase()) ||
+    (s.desc || '').toLowerCase().includes(q.toLowerCase())
   )
 
   const matchedFoods = q.trim() === '' ? [] : foods.filter(f => {
     const parentStall = activeStalls.find(s => s.id === f.stall_id)
     if (!parentStall) return false // ignore suspended stall foods
-    return f.food_name.toLowerCase().includes(q.toLowerCase()) || 
-           (f.description && f.description.toLowerCase().includes(q.toLowerCase()))
+    return (f.food_name || '').toLowerCase().includes(q.toLowerCase()) || 
+           ((f.description || '').toLowerCase().includes(q.toLowerCase()))
   })
 
   return (
@@ -95,8 +95,12 @@ export default function Search({ onRestaurant, onBack, stalls = [], foods = [] }
               const stall = activeStalls.find(s => s.id === f.stall_id)
               return (
                 <div key={`food-${f.id}`} className="srch-row" onClick={() => onRestaurant(stall)} id={`srch-food-${f.id}`} style={{ borderBottom: '1px solid #F1F3F5', padding: '12px 0' }}>
-                  <div className="srch-img-wrap" style={{ fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8F9FA' }}>
-                    {f.image || '🍔'}
+                  <div className="srch-img-wrap" style={{ fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8F9FA', overflow: 'hidden' }}>
+                    {(f.image?.startsWith('http') || f.image?.startsWith('data:')) ? (
+                      <img src={f.image} alt="food" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                    ) : (
+                      f.image || '🍔'
+                    )}
                   </div>
                   <div className="srch-info">
                     <p className="srch-name">{f.food_name}</p>

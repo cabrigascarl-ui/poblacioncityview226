@@ -22,6 +22,7 @@ export default function Login({
   const [pass, setPass] = useState('')
   const [show, setShow] = useState(false)
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   // Register Fields
   const [regName, setRegName] = useState('')
@@ -43,7 +44,9 @@ export default function Login({
       return
     }
 
-    // 1. Admin Login
+    setIsLoading(true)
+    setTimeout(() => {
+      // 1. Admin Login
     if ((user.toLowerCase() === 'admin' || user.toLowerCase() === 'admin@pobla.go') && password === 'admin') {
       onAdminLogin?.()
       return
@@ -52,6 +55,7 @@ export default function Login({
     // 2. Games Manager Login
     if ((user.toLowerCase() === 'games' || user.toLowerCase() === 'games@pobla.go') && password === 'games') {
       onGamesLogin?.()
+      setIsLoading(false)
       return
     }
 
@@ -60,9 +64,11 @@ export default function Login({
     if (foundCust) {
       if (foundCust.status === 'suspended') {
         setError('This account has been suspended. Contact support.')
+        setIsLoading(false)
         return
       }
       onLogin?.(foundCust)
+      setIsLoading(false)
       return
     }
 
@@ -77,6 +83,7 @@ export default function Login({
       } else {
         onStallLogin?.({ ...stallObj, staffName: foundStaff.fullname, staffId: foundStaff.id })
       }
+      setIsLoading(false)
       return
     } else if (foundStall) {
       if (foundStall.status === 'suspended') {
@@ -84,6 +91,7 @@ export default function Login({
       } else {
         onStallLogin?.(foundStall)
       }
+      setIsLoading(false)
       return
     }
 
@@ -95,11 +103,14 @@ export default function Login({
       } else {
         onRiderLogin?.(foundRider)
       }
+      setIsLoading(false)
       return
     }
 
     // If none match
     setError('Invalid email or password.')
+    setIsLoading(false)
+    }, 500)
   }
 
   const fillDemo = () => {
@@ -136,7 +147,7 @@ export default function Login({
       return
     }
 
-    const exists = customers.find(c => c.email.toLowerCase() === regEmail.toLowerCase() || c.phone === regPhone)
+    const exists = customers.find(c => c.email?.toLowerCase() === regEmail.toLowerCase() || c.phone === regPhone)
     if (exists) {
       setError('Email or phone number already registered.')
       return
@@ -151,6 +162,7 @@ export default function Login({
       status: 'active',
     }
 
+    setIsLoading(true)
     try {
       if (onRegisterCustomer) {
         const savedUser = await onRegisterCustomer(newCust)
@@ -158,6 +170,8 @@ export default function Login({
       }
     } catch (err) {
       setError(err.message || 'Failed to register account.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -251,8 +265,8 @@ export default function Login({
               <button type="button" className="lg-forgot-btn">Forgot Password?</button>
             </div>
 
-            <button type="submit" className="lg-submit-btn">
-              Login
+            <button type="submit" className="lg-submit-btn" disabled={isLoading} style={{opacity: isLoading ? 0.7 : 1}}>
+              {isLoading ? 'Logging in...' : 'Login'}
             </button>
           </form>
         ) : (
@@ -293,8 +307,8 @@ export default function Login({
                 value={regConfirmPass} onChange={e => setRegConfirmPass(e.target.value)} required />
             </div>
 
-            <button type="submit" className="lg-submit-btn">
-              Register
+            <button type="submit" className="lg-submit-btn" disabled={isLoading} style={{opacity: isLoading ? 0.7 : 1}}>
+              {isLoading ? 'Registering... (Waking up server 😴)' : 'Register'}
             </button>
           </form>
         )}

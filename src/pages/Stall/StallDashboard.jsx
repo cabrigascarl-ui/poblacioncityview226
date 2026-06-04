@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { api } from '../../api'
 import './StallDashboard.css'
 
 const STALL_TABS = [
@@ -35,6 +36,7 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
   const [newDesc, setNewDesc] = useState('')
   const [newCat, setNewCat] = useState('Noodles')
   const [newEmoji, setNewEmoji] = useState('🍜')
+  const [newAvailable, setNewAvailable] = useState(true)
 
   // Edit Profile Fields
   const [profName, setProfName] = useState(stall?.stall_name || '')
@@ -49,7 +51,19 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
-      setProfLogo(ev.target.result)
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 500;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+        setProfLogo(compressedBase64);
+      };
+      img.src = ev.target.result;
     }
     reader.readAsDataURL(file)
   }
@@ -59,7 +73,19 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
-      setNewEmoji(ev.target.result)
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 500;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+        setNewEmoji(compressedBase64);
+      };
+      img.src = ev.target.result;
     }
     reader.readAsDataURL(file)
   }
@@ -69,7 +95,19 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
-      setEditingItem({...editingItem, image: ev.target.result})
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 500;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+        setEditingItem(prev => ({...prev, image: compressedBase64}));
+      };
+      img.src = ev.target.result;
     }
     reader.readAsDataURL(file)
   }
@@ -78,54 +116,66 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
   const stallFoods = foods.filter(f => f.stall_id === stall?.id)
   const stallOrders = orders.filter(o => o.stall_id === stall?.id)
 
-  const handleUpdateStatus = (orderId, nextStatus) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: nextStatus } : o))
-    if (selectedOrderDetails && selectedOrderDetails.id === orderId) {
-      setSelectedOrderDetails(prev => ({ ...prev, status: nextStatus }))
+  const handleUpdateStatus = async (orderId, nextStatus) => {
+    try {
+      await api.updateOrder(orderId, { status: nextStatus })
+      if (selectedOrderDetails && selectedOrderDetails.id === orderId) {
+        setSelectedOrderDetails(prev => ({ ...prev, status: nextStatus }))
+      }
+    } catch (err) { console.error(err) }
+  }
+
+  const handleReject = async (orderId) => {
+    try {
+      await api.updateOrder(orderId, { status: 'Cancelled' })
+      if (selectedOrderDetails && selectedOrderDetails.id === orderId) {
+        setSelectedOrderDetails(null)
+      }
+    } catch (err) { console.error(err) }
+  }
+
+  const handleToggleAvail = async (foodId) => {
+    const item = foods.find(f => f.id === foodId)
+    if (item) {
+      try {
+        await api.updateFood(foodId, { available: item.available === undefined ? false : !item.available })
+      } catch (err) { console.error(err) }
     }
   }
 
-  const handleReject = (orderId) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Cancelled' } : o))
-    if (selectedOrderDetails && selectedOrderDetails.id === orderId) {
-      setSelectedOrderDetails(null)
-    }
-  }
-
-  const handleToggleAvail = (foodId) => {
-    setFoods(prev => prev.map(f => f.id === foodId ? { ...f, available: f.available === undefined ? false : !f.available } : f))
-  }
-
-  const handleDeleteMenu = (foodId) => {
+  const handleDeleteMenu = async (foodId) => {
     if (window.confirm("Are you sure you want to delete this menu item?")) {
-      setFoods(prev => prev.filter(f => f.id !== foodId))
+      try { await api.deleteFood(foodId) } catch (err) { console.error(err) }
     }
   }
 
-  const handleAddItem = (e) => {
+  const handleAddItem = async (e) => {
     e.preventDefault()
     if (!newName || !newPrice) return
     const newItem = {
-      id: Date.now(),
       stall_id: stall.id,
       food_name: newName,
       price: parseFloat(newPrice),
       image: newEmoji,
       description: newDesc,
       category: newCat,
-      available: true
+      available: newAvailable
     }
-    setFoods(prev => [...prev, newItem])
-    setShowAddModal(false)
-    setNewName(''); setNewPrice(''); setNewDesc(''); setNewEmoji('🍜')
+    try {
+      await api.addFood(newItem)
+      setShowAddModal(false)
+      setNewName(''); setNewPrice(''); setNewDesc(''); setNewEmoji('🍜'); setNewAvailable(true);
+    } catch (err) { console.error(err) }
   }
 
-  const handleEditItem = (e) => {
+  const handleEditItem = async (e) => {
     e.preventDefault()
     if (!editingItem.food_name || !editingItem.price) return
-    setFoods(prev => prev.map(f => f.id === editingItem.id ? editingItem : f))
-    setShowEditModal(false)
-    setEditingItem(null)
+    try {
+      await api.updateFood(editingItem.id, editingItem)
+      setShowEditModal(false)
+      setEditingItem(null)
+    } catch (err) { console.error(err) }
   }
 
   // Auto-save profile changes
@@ -150,6 +200,11 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
   const pendingOrders = stallOrders.filter(o => o.status === 'Pending' || o.status === 'Accepted')
   const preparingOrders = stallOrders.filter(o => o.status === 'Preparing')
   const readyOrders = stallOrders.filter(o => o.status === 'Ready for Pickup' || o.status === 'Ready for Delivery' || o.status === 'Delivering')
+
+  const formatItems = (items) => {
+    if (Array.isArray(items)) return items.map(i => `${i.qty}x ${i.name || i.food_name || 'Item'}`).join(', ');
+    return String(items || '');
+  }
 
   // Filter orders by tab
   const filteredOrders = stallOrders.filter(o => {
@@ -241,13 +296,15 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
               <div style={{position:'relative',zIndex:1}}>
                 <p style={{color:'rgba(255,255,255,0.55)',fontSize:11,fontWeight:700,margin:'0 0 4px',letterSpacing:1.2,textTransform:'uppercase', textShadow: '0 1px 2px rgba(0,0,0,0.5)'}}>Today's Revenue</p>
                 <div style={{display:'flex',alignItems:'flex-end',gap:10,marginBottom:16}}>
-                  <span style={{color:'white',fontSize:38,fontWeight:900,letterSpacing:-1, textShadow: '0 2px 10px rgba(0,0,0,0.3)'}}>₱{totalRevenue > 0 ? totalRevenue.toLocaleString() : '8,340'}</span>
-                  <span style={{
-                    background:'rgba(76,175,80,0.15)',color:'#A5D6A7',
-                    fontSize:11,fontWeight:800,padding:'4px 10px',borderRadius:8,
-                    border:'1px solid rgba(76,175,80,0.4)',marginBottom:8,
-                    boxShadow: '0 2px 8px rgba(76,175,80,0.2), inset 0 1px 0 rgba(255,255,255,0.2)'
-                  }}>+25% ↑</span>
+                  <span style={{color:'white',fontSize:38,fontWeight:900,letterSpacing:-1, textShadow: '0 2px 10px rgba(0,0,0,0.3)'}}>₱{totalRevenue > 0 ? totalRevenue.toLocaleString() : '0'}</span>
+                  {totalRevenue > 0 && (
+                    <span style={{
+                      background:'rgba(76,175,80,0.15)',color:'#A5D6A7',
+                      fontSize:11,fontWeight:800,padding:'4px 10px',borderRadius:8,
+                      border:'1px solid rgba(76,175,80,0.4)',marginBottom:8,
+                      boxShadow: '0 2px 8px rgba(76,175,80,0.2), inset 0 1px 0 rgba(255,255,255,0.2)'
+                    }}>+0% ↑</span>
+                  )}
                 </div>
                 
                 <div style={{display:'flex',gap:16, background: 'rgba(0,0,0,0.2)', padding: '12px 16px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.04)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'}}>
@@ -268,7 +325,7 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
                   <div style={{width:1,background:'rgba(255,255,255,0.08)'}}/>
                   <div style={{flex: 1}}>
                     <p style={{color:'rgba(255,255,255,0.45)',fontSize:10,margin:'0 0 4px',fontWeight:700, textTransform: 'uppercase'}}>Rating</p>
-                    <p style={{color:'#FFD54F',fontSize:16,fontWeight:800,margin:0, textShadow: '0 2px 6px rgba(255,213,79,0.3)'}}>4.8 ⭐</p>
+                    <p style={{color:'#FFD54F',fontSize:16,fontWeight:800,margin:0, textShadow: '0 2px 6px rgba(255,213,79,0.3)'}}>{stallOrders.length > 0 ? '5.0' : '0.0'} ⭐</p>
                   </div>
                 </div>
               </div>
@@ -391,7 +448,7 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
                           <span style={{fontSize:13,fontWeight:800,color:'#111'}}>#{o.id}</span>
                           <span style={{background:statusBg,color:statusColor,fontSize:9,fontWeight:800,padding:'2px 7px',borderRadius:6,textTransform:'uppercase',letterSpacing:0.3}}>{o.status}</span>
                         </div>
-                        <p style={{color:'#888',fontSize:11,fontWeight:600,margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{o.items}</p>
+                        <p style={{color:'#888',fontSize:11,fontWeight:600,margin:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{formatItems(o.items)}</p>
                       </div>
                       <span style={{color:'#E53935',fontWeight:900,fontSize:14,flexShrink:0}}>₱{o.total_price}</span>
                     </div>
@@ -423,9 +480,10 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
                 const customer = customers.find(c => c.id === o.customer_id)
                 const cName = customer?.fullname || 'Guest User'
                 const cAddress = customer?.address || 'Pickup'
-                const statusClass = ['pending', 'accepted'].includes(o.status.toLowerCase()) ? 'new' : 
-                                    o.status.toLowerCase() === 'preparing' ? 'preparing' : 
-                                    ['ready for pickup', 'ready for delivery', 'delivering'].includes(o.status.toLowerCase()) ? 'ready' : 'completed';
+                const st = (o.status || '').toLowerCase()
+                const statusClass = ['pending', 'accepted'].includes(st) ? 'new' : 
+                                    st === 'preparing' ? 'preparing' : 
+                                    ['ready for pickup', 'ready for delivery', 'delivering'].includes(st) ? 'ready' : 'completed';
                 return (
                 <div key={o.id} className="sd-order-card" onClick={() => { setSelectedOrderDetails({ id: o.id, status: o.status, time: o.time, total_price: o.total_price, items: o.items, customer_id: o.customer_id, payment_method: o.payment_method, notes: o.notes }); }}>
                   
@@ -439,7 +497,7 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
                         <span className={`sd-oc-badge ${statusClass}`}>{o.status}</span>
                         <span className="sd-oc-time">{o.time}</span>
                       </div>
-                      <span className="sd-oc-items-price">{o.items} • ₱{o.total_price}</span>
+                      <span className="sd-oc-items-price">{formatItems(o.items)} • ₱{o.total_price}</span>
                     </div>
                   </div>
 
@@ -541,13 +599,13 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
                 <span className="sd-og-label">Total Revenue</span>
               </div>
               <div className="sd-og-mid">
-                <span className="sd-og-val">₱{totalRevenue || '8,340'}</span>
+                <span className="sd-og-val">₱{totalRevenue || '0'}</span>
                 <div className="sd-og-icon-green">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
                 </div>
               </div>
               <div className="sd-og-bot">
-                <span className="sd-og-trend pos">+25%</span> <span className="sd-og-trend-text">vs last week</span>
+                {totalRevenue > 0 && <><span className="sd-og-trend pos">+0%</span> <span className="sd-og-trend-text">vs last week</span></>}
               </div>
             </div>
 
@@ -635,7 +693,7 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
                     </span>
                   </div>
                 </div>
-                <input ref={logoInputRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={handleLogoUpload} />
+                <input ref={logoInputRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleLogoUpload} />
               </div>
             </div>
 
@@ -762,7 +820,7 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
                     <span className={`sd-oc-badge ${['Pending','Accepted'].includes(selectedOrderDetails.status) ? 'new' : selectedOrderDetails.status === 'Preparing' ? 'preparing' : ['Ready for Pickup','Ready for Delivery','Delivering'].includes(selectedOrderDetails.status) ? 'ready' : 'completed'}`}>{selectedOrderDetails.status}</span>
                     <span className="sd-bs-time" style={{marginLeft: 'auto'}}>{selectedOrderDetails.time}</span>
                   </div>
-                  <span className="sd-bs-items" style={{color: '#777', fontSize: 13, fontWeight: 600, display: 'block', marginTop: 4}}>{selectedOrderDetails.items}</span>
+                  <span className="sd-bs-items" style={{color: '#777', fontSize: 13, fontWeight: 600, display: 'block', marginTop: 4}}>{formatItems(selectedOrderDetails.items)}</span>
                 </div>
               </div>
 
@@ -797,7 +855,7 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
               {/* Order Items List */}
               <div className="sd-bs-items-section">
                 <h4 className="sd-bs-section-title">Order Items</h4>
-                {selectedOrderDetails.items.split(', ').map((itemStr, idx) => {
+                {formatItems(selectedOrderDetails.items).split(', ').map((itemStr, idx) => {
                   const match = itemStr.match(/^(\d+x)\s+(.*)$/)
                   const qty = match ? match[1] : ''
                   const name = match ? match[2] : itemStr
@@ -879,13 +937,30 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
               <input placeholder="Food Name" required value={newName} onChange={e => setNewName(e.target.value)} style={{padding: 12, borderRadius: 12, border: '1px solid #E5E7EB', fontSize: 14}} />
               <input placeholder="Price (₱)" type="number" required value={newPrice} onChange={e => setNewPrice(e.target.value)} style={{padding: 12, borderRadius: 12, border: '1px solid #E5E7EB', fontSize: 14}} />
               <input placeholder="Description" value={newDesc} onChange={e => setNewDesc(e.target.value)} style={{padding: 12, borderRadius: 12, border: '1px solid #E5E7EB', fontSize: 14}} />
-              <select value={newCat} onChange={e => setNewCat(e.target.value)} style={{padding: 12, borderRadius: 12, border: '1px solid #E5E7EB', fontSize: 14, background: 'white'}}>
-                <option value="Burgers">Burgers</option>
-                <option value="Fries">Fries</option>
-                <option value="Drinks">Drinks</option>
-                <option value="Noodles">Noodles</option>
-                <option value="Rice Meals">Rice Meals</option>
-              </select>
+              <input 
+                list="category-options"
+                placeholder="Category (e.g. Burgers, Rice Meals)"
+                required
+                value={newCat} 
+                onChange={e => setNewCat(e.target.value)} 
+                style={{padding: 12, borderRadius: 12, border: '1px solid #E5E7EB', fontSize: 14, background: 'white', width: '100%', boxSizing: 'border-box'}}
+              />
+              <datalist id="category-options">
+                <option value="Burgers" />
+                <option value="Fries" />
+                <option value="Drinks" />
+                <option value="Noodles" />
+                <option value="Rice Meals" />
+              </datalist>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: '1px solid #E5E7EB', background: 'white'}}>
+                <span style={{fontSize: 14, fontWeight: 600, color: '#374151'}}>Item Available</span>
+                <label style={{position: 'relative', display: 'inline-block', width: 44, height: 24}}>
+                  <input type="checkbox" checked={newAvailable} onChange={e => setNewAvailable(e.target.checked)} style={{opacity: 0, width: 0, height: 0}} />
+                  <span style={{position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: newAvailable ? '#22C55E' : '#E5E7EB', transition: '.3s', borderRadius: 24}}>
+                    <span style={{position: 'absolute', content: '""', height: 18, width: 18, left: newAvailable ? 22 : 3, bottom: 3, backgroundColor: 'white', transition: '.3s', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.2)'}}></span>
+                  </span>
+                </label>
+              </div>
               <div style={{display: 'flex', alignItems: 'center', gap: 12, marginTop: 4}}>
                 <div style={{
                   width: 60, height: 60, borderRadius: 12, border: '1px solid #E5E7EB',
@@ -913,7 +988,7 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     Upload Photo
                   </button>
-                  <input ref={addImageInputRef} type="file" accept="image/*" capture="environment" style={{display: 'none'}} onChange={handleAddImageUpload} />
+                  <input ref={addImageInputRef} type="file" accept="image/*" style={{display: 'none'}} onChange={handleAddImageUpload} />
                 </div>
               </div>
               <button type="submit" className="sd-save-btn" style={{marginTop: 12}}>Save Item</button>
@@ -935,6 +1010,23 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
               <input placeholder="Food Name" required value={editingItem.food_name} onChange={e => setEditingItem({...editingItem, food_name: e.target.value})} style={{padding: 12, borderRadius: 12, border: '1px solid #E5E7EB', fontSize: 14}} />
               <input placeholder="Price (₱)" type="number" required value={editingItem.price} onChange={e => setEditingItem({...editingItem, price: e.target.value})} style={{padding: 12, borderRadius: 12, border: '1px solid #E5E7EB', fontSize: 14}} />
               <input placeholder="Description" value={editingItem.description} onChange={e => setEditingItem({...editingItem, description: e.target.value})} style={{padding: 12, borderRadius: 12, border: '1px solid #E5E7EB', fontSize: 14}} />
+              <input 
+                list="category-options"
+                placeholder="Category (e.g. Burgers, Rice Meals)"
+                required
+                value={editingItem.category || ''} 
+                onChange={e => setEditingItem({...editingItem, category: e.target.value})} 
+                style={{padding: 12, borderRadius: 12, border: '1px solid #E5E7EB', fontSize: 14, background: 'white', width: '100%', boxSizing: 'border-box'}}
+              />
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: '1px solid #E5E7EB', background: 'white'}}>
+                <span style={{fontSize: 14, fontWeight: 600, color: '#374151'}}>Item Available</span>
+                <label style={{position: 'relative', display: 'inline-block', width: 44, height: 24}}>
+                  <input type="checkbox" checked={editingItem.available !== false} onChange={e => setEditingItem({...editingItem, available: e.target.checked})} style={{opacity: 0, width: 0, height: 0}} />
+                  <span style={{position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: editingItem.available !== false ? '#22C55E' : '#E5E7EB', transition: '.3s', borderRadius: 24}}>
+                    <span style={{position: 'absolute', content: '""', height: 18, width: 18, left: editingItem.available !== false ? 22 : 3, bottom: 3, backgroundColor: 'white', transition: '.3s', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.2)'}}></span>
+                  </span>
+                </label>
+              </div>
               <div style={{display: 'flex', alignItems: 'center', gap: 12, marginTop: 4}}>
                 <div style={{
                   width: 60, height: 60, borderRadius: 12, border: '1px solid #E5E7EB',
@@ -962,7 +1054,7 @@ export default function StallDashboard({ onLogout, stall, foods = [], setFoods, 
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     Upload Photo
                   </button>
-                  <input ref={editImageInputRef} type="file" accept="image/*" capture="environment" style={{display: 'none'}} onChange={handleEditImageUpload} />
+                  <input ref={editImageInputRef} type="file" accept="image/*" style={{display: 'none'}} onChange={handleEditImageUpload} />
                 </div>
               </div>
               <button type="submit" className="sd-save-btn" style={{marginTop: 12}}>Update Item</button>

@@ -46,26 +46,29 @@ export default function Restaurant({ onBack, onCart, addToCart, cartItems, stall
         
         {/* Stall Hero Banner */}
         <div className="rest-hero-container">
-          <div className="rest-banner-img">
-            {(stall?.logo?.startsWith('http') || stall?.logo?.startsWith('data:')) ? (
-              <img src={stall.logo} alt="logo" style={{width: 80, height: 80, objectFit: 'cover', borderRadius: 20}} />
-            ) : (
-              <span style={{ fontSize: 56 }}>{stall?.logo || '🍜'}</span>
-            )}
-          </div>
+          <div className="rest-banner-img"></div>
           <div className="rest-hero-card">
-            <h1 className="rest-hero-name">{stall?.stall_name}</h1>
-            <div className="rest-rating-row">
-              <span className="rest-star">★</span>
-              <span className="rest-rating-val">4.8</span>
-              <span className="rest-reviews-count">(120)</span>
-              <span className="rest-meta-sep">•</span>
-              <span className="rest-cuisine">{stall?.category}</span>
+            <div className="rest-hero-logo">
+              {(stall?.logo?.startsWith('http') || stall?.logo?.startsWith('data:')) ? (
+                <img src={stall.logo} alt="logo" />
+              ) : (
+                <span>{stall?.logo || '🍜'}</span>
+              )}
             </div>
-            <div className="rest-delivery-info">
-              <span>₱{stall?.delivery_fee} Delivery</span>
-              <span className="rest-meta-sep">•</span>
-              <span>30 min</span>
+            <div className="rest-hero-info">
+              <h1 className="rest-hero-name">{stall?.stall_name}</h1>
+              <div className="rest-rating-row">
+                <span className="rest-star">★</span>
+                <span className="rest-rating-val">4.8</span>
+                <span className="rest-reviews-count">(120)</span>
+                <span className="rest-meta-sep">•</span>
+                <span className="rest-cuisine">{stall?.category}</span>
+              </div>
+              <div className="rest-delivery-info">
+                <span>₱{stall?.delivery_fee || 45} Delivery</span>
+                <span className="rest-meta-sep">•</span>
+                <span>30 min</span>
+              </div>
             </div>
           </div>
         </div>

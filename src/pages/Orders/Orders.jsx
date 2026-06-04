@@ -46,60 +46,64 @@ export default function Orders({ onTrack, orders = [], stalls = [], currentCusto
     }
 
     return list.map((o, idx) => {
-      const stall = getStallInfo(o.stall_id)
-      const sc = statusColors[o.status] || { color: '#6B7280', bg: '#F3F4F6' }
+      try {
+        const stall = getStallInfo(o.stall_id)
+        const sc = statusColors[o.status] || { color: '#6B7280', bg: '#F3F4F6' }
 
-      return (
-        <div key={o.id} className="ord-card" id={`ord-${o.id}`}
-             style={{ animationDelay: `${0.06 * idx}s` }}>
-          <div className="ord-card-top">
-            <div className="ord-stall-logo">
-              {(stall.logo?.startsWith('http') || stall.logo?.startsWith('data:')) ? (
-                <img src={stall.logo} alt="logo" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit'}} />
-              ) : (
-                stall.logo
+        return (
+          <div key={o.id} className="ord-card" id={`ord-${o.id}`}
+               style={{ animationDelay: `${0.06 * idx}s` }}>
+            <div className="ord-card-top">
+              <div className="ord-stall-logo">
+                {(typeof stall.logo === 'string' && (stall.logo.startsWith('http') || stall.logo.startsWith('data:'))) ? (
+                  <img src={stall.logo} alt="logo" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit'}} />
+                ) : (
+                  String(stall.logo || '')
+                )}
+              </div>
+              <div className="ord-store-info">
+                <p className="ord-store">{String(stall.stall_name || '')}</p>
+                <p className="ord-num">Order #{String(o.id || '')}</p>
+                <span className="ord-status-pill" style={{ color: sc.color, background: sc.bg }}>
+                  {String(o.status || '')}
+                </span>
+              </div>
+            </div>
+
+            <div className="ord-details-block">
+              <p className="ord-items-line">
+                <span className="ord-detail-label">Items:</span> {Array.isArray(o.items) ? o.items.map(i => `${i.qty}x ${i.name || i.food_name || 'Item'}`).join(', ') : String(o.items || '')}
+              </p>
+              <p className="ord-detail-line">
+                <span className="ord-detail-label">Payment:</span> {String(o.payment_method || '')}
+              </p>
+              {o.notes && (
+                <p className="ord-detail-line">
+                  <span className="ord-detail-label">Notes:</span> {String(o.notes || '')}
+                </p>
               )}
             </div>
-            <div className="ord-store-info">
-              <p className="ord-store">{stall.stall_name}</p>
-              <p className="ord-num">Order #{o.id}</p>
-              <span className="ord-status-pill" style={{ color: sc.color, background: sc.bg }}>
-                {o.status}
-              </span>
+
+            <div className="ord-card-foot">
+              <span className="ord-total">₱{String(o.total_price || 0)}.00</span>
+              {o.status !== 'Delivered' && o.status !== 'Cancelled' ? (
+                <button className="ord-view-btn" onClick={() => onTrack(o)} id={`btn-view-${o.id}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  Track Order
+                </button>
+              ) : (
+                <span className="ord-done-label">
+                  {o.status === 'Delivered' ? '✓ Done' : '✕ Cancelled'}
+                </span>
+              )}
             </div>
           </div>
-
-          <div className="ord-details-block">
-            <p className="ord-items-line">
-              <span className="ord-detail-label">Items:</span> {o.items}
-            </p>
-            <p className="ord-detail-line">
-              <span className="ord-detail-label">Payment:</span> {o.payment_method}
-            </p>
-            {o.notes && (
-              <p className="ord-detail-line">
-                <span className="ord-detail-label">Notes:</span> {o.notes}
-              </p>
-            )}
-          </div>
-
-          <div className="ord-card-foot">
-            <span className="ord-total">₱{o.total_price}.00</span>
-            {o.status !== 'Delivered' && o.status !== 'Cancelled' ? (
-              <button className="ord-view-btn" onClick={() => onTrack(o)} id={`btn-view-${o.id}`}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-                Track Order
-              </button>
-            ) : (
-              <span className="ord-done-label">
-                {o.status === 'Delivered' ? '✓ Done' : '✕ Cancelled'}
-              </span>
-            )}
-          </div>
-        </div>
-      )
+        )
+      } catch (err) {
+        return <div key={idx} style={{color: 'red'}}>Error rendering order: {err.message}</div>
+      }
     })
   }
 

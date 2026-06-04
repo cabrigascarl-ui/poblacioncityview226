@@ -64,10 +64,13 @@ export default function Cart({ items = [], updateQty, onBack, onShopping, onPlac
 
       <div className="cart-scroll">
         {items.length === 0 ? (
-          <div className="rd-empty-state" style={{ padding: '60px 16px' }}>
-            <span>🛒</span>
-            <p>Your cart is empty.</p>
-            <button className="rd-btn-outline" onClick={onShopping}>Browse Food Stalls</button>
+          <div className="cart-empty-state">
+            <div className="cart-empty-icon-wrap">
+              <span className="cart-empty-icon">🛒</span>
+            </div>
+            <h2 className="cart-empty-title">Your cart is empty</h2>
+            <p className="cart-empty-desc">Looks like you haven't added any food yet. Explore our stalls and find something delicious!</p>
+            <button className="pg-btn cart-empty-btn" onClick={onShopping}>Browse Food Stalls</button>
           </div>
         ) : (
           Object.keys(itemsByStall).map(stallIdStr => {
@@ -97,7 +100,13 @@ export default function Cart({ items = [], updateQty, onBack, onShopping, onPlac
                   {stallItems.map(item => (
                     <div key={item.id} className="cart-item" id={`ci-${item.id}`}>
                       <div className="cart-item-left">
-                        <div style={{ fontSize: 20, marginRight: 10 }}>{item.image || '🍔'}</div>
+                        <div style={{ fontSize: 20, marginRight: 10, width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8F9FA' }}>
+                          {(item.image?.startsWith('http') || item.image?.startsWith('data:')) ? (
+                            <img src={item.image} alt="food" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                          ) : (
+                            item.image || '🍔'
+                          )}
+                        </div>
                         <div>
                           <p className="cart-item-name">{item.food_name || item.name}</p>
                           <p className="cart-item-price">₱{Number(item.price).toFixed(2)}</p>

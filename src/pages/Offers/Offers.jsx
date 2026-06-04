@@ -39,15 +39,21 @@ export default function Offers({ promotions }) {
         {/* Announcements list directly from Admin */}
         <h2 className="off-sub-title">Admin Announcements</h2>
         <div className="off-announcements">
-          {promotions.map((p, index) => (
+          {promotions.filter(p => p.msg || p.title).map((p, index) => (
             <div key={p.id || index} className="off-ann-row">
               <div className="off-ann-dot" />
               <div className="off-ann-body">
-                <p className="off-ann-msg">{p.msg}</p>
+                <p className="off-ann-msg" style={{fontWeight: p.title ? '600' : 'normal'}}>{p.title || p.msg}</p>
+                {p.title && p.msg && <p className="off-ann-msg" style={{fontSize: '0.85em', color: '#666', marginTop: '2px'}}>{p.msg}</p>}
                 <p className="off-ann-time">{p.time}</p>
               </div>
             </div>
           ))}
+          {promotions.filter(p => p.msg || p.title).length === 0 && (
+             <div style={{textAlign: 'center', color: '#888', padding: '16px', fontSize: '0.9em'}}>
+               No new announcements at this time.
+             </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { api } from '../../api'
 import './RiderDashboard.css'
 
 const L_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
@@ -32,7 +33,23 @@ const RIDER_ICON_HTML = `<div id="lf-rider-icon" style="position:relative;width:
   </svg>
 </div>`;
 
-function RiderLiveMap({ isFull = false, riderPos }) {
+function getDistance(pos1, pos2) {
+  if (!pos1 || !pos2) return 0;
+  const R = 6371;
+  const dLat = (pos2.lat - pos1.lat) * Math.PI / 180;
+  const dLng = (pos2.lng - pos1.lng) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(pos1.lat * Math.PI / 180) * Math.cos(pos2.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+function getCustomerPos(customer) {
+  if (!customer) return { lat: 11.7783, lng: 124.8897 };
+  let hash = 0;
+  for (let i = 0; i < (customer.id || '').length; i++) hash = (customer.id || '').charCodeAt(i) + ((hash << 5) - hash);
+  return { lat: 11.7700 + (Math.abs(hash % 150) / 10000), lng: 124.8800 + (Math.abs((hash >> 8) % 150) / 10000) };
+}
+
+function RiderLiveMap({ isFull = false, riderPos, destPos }) {
   const mapRef = useRef(null)
   const instanceRef = useRef(null)
   const riderMarkerRef = useRef(null)
@@ -73,7 +90,10 @@ function RiderLiveMap({ isFull = false, riderPos }) {
       const rm = L.marker([pos.lat, pos.lng], { icon: riderIcon, zIndexOffset: 1000 }).addTo(map)
       riderMarkerRef.current = rm
 
-      fetch('https://router.project-osrm.org/route/v1/driving/124.8835,11.7742;124.8849,11.7749;124.8855,11.7755;124.8860,11.7760;124.8897,11.7783?overview=full&geometries=geojson')
+      const destLng = destPos ? destPos.lng : 124.8897;
+      const destLat = destPos ? destPos.lat : 11.7783;
+
+      fetch(`https://router.project-osrm.org/route/v1/driving/${pos.lng},${pos.lat};${destLng},${destLat}?overview=full&geometries=geojson`)
         .then(res => res.json())
         .then(data => {
           if (data.routes && data.routes[0]) {
@@ -83,7 +103,7 @@ function RiderLiveMap({ isFull = false, riderPos }) {
             L.polyline(coords, { color: 'white', weight: 2, lineCap: 'round', opacity: 0.35, lineJoin: 'round', dashArray: '1 12' }).addTo(map);
             map.fitBounds(coords, { padding: [40, 40] });
           } else {
-            const latLngs = [[11.7742, 124.8835], [11.7749, 124.8849], [11.7755, 124.8855], [11.7760, 124.8860], [11.7783, 124.8897]];
+            const latLngs = [[pos.lat, pos.lng], [destLat, destLng]];
             L.polyline(latLngs, { color: '#E8001C', weight: 4, opacity: 1 }).addTo(map);
             map.fitBounds(latLngs, { padding: [20, 20] });
           }
@@ -110,66 +130,89 @@ function RiderLiveMap({ isFull = false, riderPos }) {
   return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 }
 
+// Icons
+const MenuIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+)
+const LogoIcon = () => (
+  <svg width="100" height="24" viewBox="0 0 100 24" fill="none">
+    <path d="M12 2L15 12L24 14L15 16L12 24L9 16L0 14L9 12L12 2Z" fill="#E8001C"/>
+    <text x="30" y="18" fontFamily="Inter" fontSize="18" fontWeight="800" fill="#1A1A1A">Poblacion</text>
+  </svg>
+)
+const BellIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+)
+const StarIcon = ({ size = 16, color = "#F2C94C" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+)
+const WalletIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12V7H5a2 2 0 0 1 2-2h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
+)
+const ScooterIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="7" cy="17" r="3"></circle><circle cx="17" cy="17" r="3"></circle><path d="M14 17h-4"></path><path d="M14 17l1.5-6H19v-2l-2.5 0-2 8"></path><path d="M7 17l-1-4h-2"></path><path d="M6 13h4"></path><path d="M10 13l1-4h3"></path><path d="M11 9l-1-4H6"></path></svg>
+)
+const BackIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+)
+const HelpIcon = () => (
+  <span className="rd-header-help">Help</span>
+)
+
 export default function RiderDashboard({ onLogout, rider, orders = [], setOrders, stalls = [], customers = [] }) {
   const [tab, setTab] = useState('home')
   const [deliveryView, setDeliveryView] = useState('available') // available, ongoing, live
   const [isOnline, setIsOnline] = useState(false)
   const [riderPos, setRiderPos] = useState(null)
-  const watchIdRef = useRef(null)
 
-  // Real-time GPS broadcasting — writes to localStorage for customer tracking page
+  // Real-time GPS broadcasting using browser native geolocation
   useEffect(() => {
-    if (!navigator.geolocation) return
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude, heading: pos.coords.heading || 0, speed: pos.coords.speed || 0, ts: Date.now() }
-        setRiderPos(loc)
-        try { localStorage.setItem('poblago_rider_location', JSON.stringify(loc)) } catch(e) {}
-      },
-      (err) => {
-        // Fallback to a default location for development
-        const fallback = { lat: 11.7756, lng: 124.8862, heading: 0, speed: 0, ts: Date.now() }
-        setRiderPos(fallback)
-        try { localStorage.setItem('poblago_rider_location', JSON.stringify(fallback)) } catch(e) {}
-      },
-      { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
-    )
-    watchIdRef.current = watchId
-    return () => navigator.geolocation.clearWatch(watchId)
-  }, [])
+    let watchId;
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const loc = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            heading: pos.coords.heading || 0,
+            speed: pos.coords.speed || 0,
+            ts: Date.now()
+          }
+          setRiderPos(loc)
+          try { localStorage.setItem('poblago_rider_location', JSON.stringify(loc)) } catch(e) {}
+          if (rider?.id && isOnline) {
+            api.updateRider(rider.id, { location: loc }).catch(() => {})
+          }
+        },
+        () => {
+          // On error/denial, use a Catbalogan fallback location
+          const fallback = { lat: 11.7756, lng: 124.8862, heading: 0, speed: 0, ts: Date.now() }
+          setRiderPos(fallback)
+        },
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+      )
+    } else {
+      // Geolocation not supported
+      setRiderPos({ lat: 11.7756, lng: 124.8862, heading: 0, speed: 0, ts: Date.now() })
+    }
+    return () => { if (watchId != null) navigator.geolocation.clearWatch(watchId) }
+  }, [rider?.id, isOnline])
 
   const defaultAvatar = "https://ui-avatars.com/api/?name=Mark+Reyes&background=E8001C&color=fff"
 
-  // Icons
-  const MenuIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-  )
-  const LogoIcon = () => (
-    <svg width="100" height="24" viewBox="0 0 100 24" fill="none">
-      <path d="M12 2L15 12L24 14L15 16L12 24L9 16L0 14L9 12L12 2Z" fill="#E8001C"/>
-      <text x="30" y="18" fontFamily="Inter" fontSize="18" fontWeight="800" fill="#1A1A1A">Poblacion</text>
-    </svg>
-  )
-  const BellIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-  )
-  const StarIcon = ({ size = 16, color = "#F2C94C" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-  )
-  const WalletIcon = ({ size = 24 }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12V7H5a2 2 0 0 1 2-2h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
-  )
-  const ScooterIcon = ({ size = 24 }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="7" cy="17" r="3"></circle><circle cx="17" cy="17" r="3"></circle><path d="M14 17h-4"></path><path d="M14 17l1.5-6H19v-2l-2.5 0-2 8"></path><path d="M7 17l-1-4h-2"></path><path d="M6 13h4"></path><path d="M10 13l1-4h3"></path><path d="M11 9l-1-4H6"></path></svg>
-  )
-  const BackIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-  )
-  const HelpIcon = () => (
-    <span className="rd-header-help">Help</span>
-  )
 
-  const renderHome = () => (
+
+  const renderHome = () => {
+    const completedOrders = orders.filter(o => o.status === 'Delivered' && o.rider_id === rider?.id);
+    const totalEarnings = completedOrders.length * 45;
+    const ongoingDeliveries = orders.filter(o => o.status === 'Delivering' && o.rider_id === rider?.id && o.group_id);
+    const ongoingCount = new Set(ongoingDeliveries.map(o => o.group_id)).size;
+    const completedCount = completedOrders.length;
+    const rName = rider?.fullname || 'Mark Reyes';
+    const initials = rName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'MR';
+    const riderAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(rName)}&background=E8001C&color=fff`;
+
+    return (
     <div className="rd-page-container">
       <div className="rd-header">
         <button className="rd-menu-btn"><MenuIcon /></button>
@@ -181,36 +224,35 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
           </div>
         </div>
         <div className="rd-bell-wrapper">
-          <button className="rd-icon-btn"><BellIcon /></button>
-          <span className="rd-badge">3</span>
+          <button className="rd-icon-btn" onClick={() => setTab('deliveries')}><BellIcon /></button>
+          {availableBatches.length > 0 && <span className="rd-badge">{availableBatches.length}</span>}
         </div>
       </div>
 
       <div className="rd-home-profile">
         <div className="rd-avatar-container">
-          <img src={defaultAvatar} alt="Rider" className="rd-avatar" />
+          <img src={riderAvatar} alt="Rider" className="rd-avatar" />
         </div>
         <div className="rd-profile-info">
           <div className="rd-profile-name-row">
-            <span className="rd-profile-name">Mark Reyes</span>
+            <span className="rd-profile-name">{rName}</span>
             <div className="rd-profile-rating">
-              <StarIcon size={12} /> 4.9
+              <StarIcon size={12} /> {rider?.rating || "5.0"}
             </div>
           </div>
           <div className="rd-profile-status-row">
-            <span className="rd-status-dot"></span> Active
+            <span className="rd-status-dot" style={{background: isOnline ? '#00B050' : '#888'}}></span> {isOnline ? 'Active' : 'Offline'}
           </div>
-          <div className="rd-rider-id" style={{color: '#E8001C', fontWeight: 700}}>Poblacion Staff Rider <br/><span style={{fontWeight: 400, color: '#888'}}>Staff ID: STAFF-00123</span></div>
+          <div className="rd-rider-id" style={{color: '#E8001C', fontWeight: 700}}>Poblacion Staff Rider <br/><span style={{fontWeight: 400, color: '#888'}}>Staff ID: {rider?.id ? rider.id.substring(0, 8) : 'STAFF-00123'}</span></div>
         </div>
       </div>
 
       <div className="rd-earnings-card">
         <div className="rd-earnings-left">
-          <h3>Today's Earnings</h3>
-          <div className="rd-earnings-amount">₱750.00</div>
+          <h3>Total Earnings</h3>
+          <div className="rd-earnings-amount">₱{totalEarnings.toFixed(2)}</div>
           <div className="rd-earnings-diff">
-            <span className="rd-diff-positive">+20%</span>
-            <span className="rd-diff-text">vs yesterday</span>
+            <span className="rd-diff-positive">Real-time</span>
           </div>
         </div>
         <div className="rd-wallet-icon">
@@ -224,7 +266,7 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
             <span>Deliveries</span>
             <div className="rd-stat-icon green"><ScooterIcon size={16} /></div>
           </div>
-          <div className="rd-stat-value">12</div>
+          <div className="rd-stat-value">{completedCount}</div>
           <div className="rd-stat-sub">Completed</div>
         </div>
         <div className="rd-stat-box" onClick={() => { setTab('deliveries'); setDeliveryView('ongoing'); }}>
@@ -232,14 +274,14 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
             <span>Ongoing</span>
             <div className="rd-stat-icon purple"><ScooterIcon size={16} /></div>
           </div>
-          <div className="rd-stat-value">1</div>
+          <div className="rd-stat-value">{ongoingCount}</div>
           <div className="rd-stat-sub">Delivery</div>
         </div>
         <div className="rd-stat-box">
           <div className="rd-stat-header">
             <span>Acceptance Rate</span>
           </div>
-          <div className="rd-stat-value">98%</div>
+          <div className="rd-stat-value">100%</div>
           <div className="rd-stat-sub positive">Great!</div>
         </div>
         <div className="rd-stat-box">
@@ -247,7 +289,7 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
             <span>Rating</span>
             <div className="rd-stat-icon yellow"><StarIcon size={16} /></div>
           </div>
-          <div className="rd-stat-value">4.9</div>
+          <div className="rd-stat-value">{rider?.rating || "5.0"}</div>
           <div className="rd-stat-sub">Excellent</div>
         </div>
       </div>
@@ -263,9 +305,10 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
         </button>
       </div>
     </div>
-  )
+    );
+  }
 
-  const pendingOrders = orders.filter(o => o.status === 'Pending' && !o.rider_id && o.group_id);
+  const pendingOrders = orders.filter(o => ['Pending', 'Accepted', 'Preparing', 'Ready for Pickup', 'Ready for Delivery'].includes(o.status) && !o.rider_id && o.group_id);
   const groupedPending = pendingOrders.reduce((acc, o) => {
     if (!acc[o.group_id]) acc[o.group_id] = [];
     acc[o.group_id].push(o);
@@ -273,12 +316,25 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
   }, {});
   const availableBatches = Object.values(groupedPending);
   const firstBatch = availableBatches[0];
-  
-  const handleAcceptBatch = (groupId) => {
-    if (setOrders) {
-      setOrders(prev => prev.map(o => o.group_id === groupId ? { ...o, status: 'Delivering', rider_id: rider?.id } : o));
+
+  const prevBatchesCountRef = useRef(availableBatches.length);
+  useEffect(() => {
+    if (isOnline && availableBatches.length > prevBatchesCountRef.current) {
+      // Play sound for new delivery request
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+      audio.play().catch(e => console.log('Audio play failed:', e));
     }
-    setDeliveryView('ongoing');
+    prevBatchesCountRef.current = availableBatches.length;
+  }, [availableBatches.length, isOnline]);
+  const handleAcceptBatch = async (groupId) => {
+    try {
+      // Find all orders in this group and update them in DB
+      const ordersToUpdate = pendingOrders.filter(o => o.group_id === groupId);
+      for (const o of ordersToUpdate) {
+        await api.updateOrder(o.id, { status: 'Delivering', rider_id: rider?.id });
+      }
+      setDeliveryView('ongoing');
+    } catch (err) { console.error('Failed to accept batch', err); }
   };
 
   const renderAvailableDelivery = () => {
@@ -300,6 +356,9 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
 
     const customer = customers.find(c => c.id === firstBatch[0].customer_id) || { fullname: 'Juan Dela Cruz', address: 'Poblacion City View, Davao City' };
     const earnings = firstBatch.length * 45; // Approx 45 per stop
+    const custPos = getCustomerPos(customer);
+    const distKm = getDistance(riderPos || { lat: 11.7742, lng: 124.8835 }, custPos);
+    const estMins = Math.max(5, Math.round((distKm / 15) * 60) + (firstBatch.length * 3)); // 15km/h avg + 3 mins per stop
 
     return (
       <div className="rd-page-container">
@@ -342,7 +401,7 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
               <div className="rd-timeline-title">{customer.fullname}</div>
               <div className="rd-timeline-sub">{customer.address}</div>
             </div>
-            <div className="rd-timeline-dist">2.4 km</div>
+            <div className="rd-timeline-dist">{distKm.toFixed(1)} km</div>
           </div>
         </div>
 
@@ -359,7 +418,7 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
               Estimated Time
             </div>
-            <div className="rd-info-value">25 - 30 mins</div>
+            <div className="rd-info-value">{estMins} - {estMins + 10} mins</div>
           </div>
           <div className="rd-info-row">
             <div className="rd-info-label">
@@ -408,6 +467,9 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
 
     const customer = customers.find(c => c.id === currentBatch[0].customer_id) || { fullname: 'Juan Dela Cruz', address: 'Poblacion City View, Davao City' };
     const groupId = currentBatch[0].group_id;
+    const custPos = getCustomerPos(customer);
+    const distKm = getDistance(riderPos || { lat: 11.7742, lng: 124.8835 }, custPos);
+    const estMins = Math.max(2, Math.round((distKm / 15) * 60));
 
     return (
       <div className="rd-page-container">
@@ -454,21 +516,21 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
                 <div className="rd-timeline-title">Drop off</div>
                 <div className="rd-timeline-sub">{customer.fullname}<br/>{customer.address}</div>
               </div>
-              <div className="rd-timeline-dist">2.4 km</div>
+              <div className="rd-timeline-dist">{distKm.toFixed(1)} km</div>
             </div>
           </div>
         </div>
 
         <div className="rd-map-preview" onClick={() => setDeliveryView('live')}>
-          <RiderLiveMap riderPos={riderPos} />
+          <RiderLiveMap riderPos={riderPos} destPos={custPos} />
         </div>
 
         <div className="rd-card-white" style={{marginTop: 16}}>
           <div className="rd-arrival-info">
             <div>
               <div className="rd-arrival-time">Arriving in</div>
-              <div className="rd-arrival-mins">18 mins</div>
-              <div className="rd-arrival-dist">2.4 km away</div>
+              <div className="rd-arrival-mins">{estMins} mins</div>
+              <div className="rd-arrival-dist">{distKm.toFixed(1)} km away</div>
             </div>
             <div style={{display: 'flex', gap: 12}}>
               <button className="rd-circle-btn">
@@ -484,7 +546,19 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
     );
   }
 
-  const renderLiveTracking = () => (
+  const renderLiveTracking = () => {
+    const ongoingOrders = orders.filter(o => o.status === 'Delivering' && o.rider_id === rider?.id && o.group_id);
+    const activeBatch = ongoingOrders.reduce((acc, o) => {
+      if (!acc[o.group_id]) acc[o.group_id] = [];
+      acc[o.group_id].push(o);
+      return acc;
+    }, {});
+    const activeGroups = Object.values(activeBatch);
+    const currentBatch = activeGroups[0] || [];
+    const customer = customers.find(c => c.id === currentBatch[0]?.customer_id) || { fullname: 'Juan Dela Cruz', address: 'Poblacion City View, Davao City' };
+    const custPos = getCustomerPos(customer);
+
+    return (
     <div className="rd-page-container" style={{height: '100dvh'}}>
       <div className="rd-header" style={{position: 'absolute', width: '100%', background: 'transparent', boxShadow: 'none'}}>
         <button className="rd-back-btn" style={{background: 'white', borderRadius: '50%', padding: 8, width: 40, height: 40, boxShadow: '0 2px 8px rgba(0,0,0,0.1)'}} onClick={() => setDeliveryView('ongoing')}>
@@ -495,8 +569,8 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
       </div>
 
       <div className="rd-map-full">
-        <div className="rd-map-order-pill">Order ID: #PGO12345</div>
-        <RiderLiveMap isFull={true} riderPos={riderPos} />
+        <div className="rd-map-order-pill">Order ID: #{currentBatch[0]?.group_id || 'PGO12345'}</div>
+        <RiderLiveMap isFull={true} riderPos={riderPos} destPos={custPos} />
       </div>
 
       <div className="rd-bottom-sheet">
@@ -504,9 +578,9 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
         <div className="rd-customer-info">
           <img src={defaultAvatar} alt="Customer" className="rd-customer-avatar" />
           <div className="rd-customer-details">
-            <div className="rd-customer-name">Juan Dela Cruz</div>
+            <div className="rd-customer-name">{customer.fullname}</div>
             <div className="rd-customer-rating"><StarIcon size={14}/> 4.9</div>
-            <div style={{fontSize: 13, color: '#555', marginTop: 4}}>Poblacion City View, Davao City</div>
+            <div style={{fontSize: 13, color: '#555', marginTop: 4}}>{customer.address}</div>
           </div>
           <button className="rd-circle-btn" style={{width: 40, height: 40}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
@@ -518,7 +592,8 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
         </button>
       </div>
     </div>
-  )
+    );
+  }
 
   const renderDeliveries = () => {
     if (deliveryView === 'available') return renderAvailableDelivery()
@@ -526,7 +601,11 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
     if (deliveryView === 'live') return renderLiveTracking()
   }
 
-  const renderEarnings = () => (
+  const renderEarnings = () => {
+    const completedOrders = orders.filter(o => o.status === 'Delivered' && o.rider_id === rider?.id);
+    const totalEarnings = completedOrders.length * 45;
+    
+    return (
     <div className="rd-page-container">
       <div className="rd-earnings-header">
         <span className="rd-earnings-title">Earnings</span>
@@ -538,11 +617,11 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
 
       <div className="rd-earnings-card red" style={{margin: '16px 20px'}}>
         <div className="rd-earnings-left">
-          <h3>This Week's Earnings</h3>
-          <div className="rd-earnings-amount">₱2,450.00</div>
+          <h3>Lifetime Earnings</h3>
+          <div className="rd-earnings-amount">₱{totalEarnings.toFixed(2)}</div>
           <div className="rd-earnings-diff">
-            <span className="rd-diff-positive">+15%</span>
-            <span className="rd-diff-text">vs last week</span>
+            <span className="rd-diff-positive">Active</span>
+            <span className="rd-diff-text">All-time</span>
           </div>
         </div>
         <div className="rd-wallet-icon">
@@ -586,25 +665,25 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
             <div className="rd-stats-list-label">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Total Deliveries
             </div>
-            <div className="rd-stats-list-value">28</div>
+            <div className="rd-stats-list-value">{completedOrders.length}</div>
           </div>
           <div className="rd-stats-list-item">
             <div className="rd-stats-list-label">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Completed Deliveries
             </div>
-            <div className="rd-stats-list-value">26</div>
+            <div className="rd-stats-list-value">{completedOrders.length}</div>
           </div>
           <div className="rd-stats-list-item">
             <div className="rd-stats-list-label">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Cancelled Deliveries
             </div>
-            <div className="rd-stats-list-value">2</div>
+            <div className="rd-stats-list-value">0</div>
           </div>
           <div className="rd-stats-list-item">
             <div className="rd-stats-list-label">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Avg. Earnings per Delivery
             </div>
-            <div className="rd-stats-list-value">₱87.50</div>
+            <div className="rd-stats-list-value">₱45.00</div>
           </div>
         </div>
       </div>
@@ -615,32 +694,28 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
       </div>
 
       <div className="rd-tx-list">
-        <div className="rd-tx-item">
-          <div>
-            <div className="rd-tx-id">#PGO12345</div>
-            <div className="rd-tx-date">May 21, 2025</div>
+        {completedOrders.slice(-5).reverse().map(order => (
+          <div className="rd-tx-item" key={order.id}>
+            <div>
+              <div className="rd-tx-id">#{order.id.substring(0, 8)}</div>
+              <div className="rd-tx-date">{order.time || 'Completed'}</div>
+            </div>
+            <div className="rd-tx-amount">₱45.00</div>
           </div>
-          <div className="rd-tx-amount">₱120.00</div>
-        </div>
-        <div className="rd-tx-item">
-          <div>
-            <div className="rd-tx-id">#PGO12344</div>
-            <div className="rd-tx-date">May 21, 2025</div>
-          </div>
-          <div className="rd-tx-amount">₱95.00</div>
-        </div>
-        <div className="rd-tx-item">
-          <div>
-            <div className="rd-tx-id">#PGO12343</div>
-            <div className="rd-tx-date">May 20, 2025</div>
-          </div>
-          <div className="rd-tx-amount">₱110.00</div>
-        </div>
+        ))}
+        {completedOrders.length === 0 && (
+          <p style={{textAlign:'center', color:'#888', margin: '20px 0'}}>No recent transactions</p>
+        )}
       </div>
     </div>
-  )
+    );
+  }
 
-  const renderProfile = () => (
+  const renderProfile = () => {
+    const rName = rider?.fullname || 'Mark Reyes';
+    const riderAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(rName)}&background=E8001C&color=fff`;
+
+    return (
     <div className="rd-page-container">
       <div className="rd-header" style={{justifyContent: 'center', position: 'relative'}}>
         <span className="rd-header-title">Profile</span>
@@ -651,17 +726,17 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
 
       <div className="rd-profile-header">
         <div className="rd-profile-avatar-wrapper">
-          <img src={defaultAvatar} alt="Mark Reyes" className="rd-profile-avatar-lg" />
+          <img src={riderAvatar} alt={rName} className="rd-profile-avatar-lg" />
           <div className="rd-profile-camera">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
           </div>
         </div>
-        <div className="rd-profile-name-lg">Mark Reyes</div>
+        <div className="rd-profile-name-lg">{rName}</div>
         <div className="rd-profile-badge" style={{background: '#E8001C', color: 'white'}}>Poblacion Staff Rider</div>
         <div className="rd-profile-rating-lg">
           <span style={{color: '#00B050', fontWeight: 800}}>✓ Official In-house Staff</span>
         </div>
-        <div className="rd-rider-id">Staff ID: STAFF-00123</div>
+        <div className="rd-rider-id">Staff ID: {rider?.id ? rider.id.substring(0, 8) : 'STAFF-00123'}</div>
       </div>
 
       <div className="rd-menu-list">
@@ -715,7 +790,8 @@ export default function RiderDashboard({ onLogout, rider, orders = [], setOrders
         </div>
       </div>
     </div>
-  )
+    );
+  }
 
   return (
     <div className="rd-container">

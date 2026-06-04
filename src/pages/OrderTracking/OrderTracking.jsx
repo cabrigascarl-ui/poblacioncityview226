@@ -16,7 +16,7 @@ function bearing(a,b){
   return((Math.atan2(Math.sin(dL)*Math.cos(lb),Math.cos(la)*Math.sin(lb)-Math.sin(la)*Math.cos(lb)*Math.cos(dL))*180/Math.PI)+360)%360
 }
 
-function TrackMap({ onUpdate, isActive, groupOrders=[], stalls=[], onMapReady, userLoc }) {
+function TrackMap({ onUpdate, isActive, groupOrders=[], stalls=[], onMapReady, userLoc, assignedRider }) {
   const mapRef=useRef(null), instanceRef=useRef(null), rmRef=useRef(null)
   const prevPos=useRef(null), prevTime=useRef(null), intervalRef=useRef(null)
   const pickupStalls=[]
@@ -50,38 +50,46 @@ function TrackMap({ onUpdate, isActive, groupOrders=[], stalls=[], onMapReady, u
           const n=coords.length-1
           const interp=(p)=>{const ei=p*n,i=Math.min(Math.floor(ei),n-1),t=ei-i,a=coords[i],b=coords[Math.min(i+1,n)];return{lat:a[1]+(b[1]-a[1])*t,lng:a[0]+(b[0]-a[0])*t}}
           let sp={lat:STALL.lat,lng:STALL.lng}
-          try{const s=JSON.parse(localStorage.getItem('poblago_rider_location')||'{}');if(s.lat)sp=s}catch(e){}
+          if (assignedRider?.location?.lat) {
+             sp = assignedRider.location
+          } else {
+            try{const s=JSON.parse(localStorage.getItem('poblago_rider_location')||'{}');if(s.lat)sp=s}catch(e){}
+          }
           const rm=L.marker([sp.lat,sp.lng],{icon:ri}).addTo(map)
           rmRef.current=rm; prevPos.current=sp; prevTime.current=Date.now()
-          intervalRef.current=setInterval(()=>{
-            try{
-              const d=JSON.parse(localStorage.getItem('poblago_rider_location')||'{}')
-              if(!d.lat)return
-              const el=document.getElementById('lf-rider-icon')
-              if(el)el.style.transform=`rotate(${d.heading}deg)`
-              const now=Date.now(),dt=(now-prevTime.current)/1000
-              const dist=haversine(prevPos.current,d)
-              const spd=dt>0?Math.round((dist/dt)*3.6):0
-              prevPos.current=d; prevTime.current=now
-              rm.setLatLng([d.lat,d.lng])
-              map.panTo([d.lat,d.lng],{animate:true,duration:0.8})
-              const rem=haversine(d,userLoc)
-              onUpdate({eta:Math.max(0,Math.ceil(rem/150)),dist:Math.round(rem),speed:spd,progress:d.progress||0})
-              if(d.progress>=1)clearInterval(intervalRef.current)
-            }catch(e){}
-          },1000)
         })
     }
     if(window.L)init(window.L)
     else{const s=document.createElement('script');s.src=L_JS;s.onload=()=>init(window.L);document.head.appendChild(s)}
-    return()=>{clearInterval(intervalRef.current);if(instanceRef.current){instanceRef.current.remove();instanceRef.current=null}}
+    return()=>{if(instanceRef.current){instanceRef.current.remove();instanceRef.current=null}}
   },[isActive,pickupStalls.length,userLoc])
+
+  useEffect(() => {
+    if (!assignedRider?.location?.lat || !rmRef.current || !instanceRef.current) return;
+    const d = assignedRider.location;
+    const el = document.getElementById('lf-rider-icon');
+    if (el) el.style.transform = `rotate(${d.heading || 0}deg)`;
+    
+    const now=Date.now(), dt=(now-prevTime.current)/1000;
+    const dist=haversine(prevPos.current || d, d);
+    const spd = dt > 0 ? Math.round((dist/dt)*3.6) : 0;
+    
+    prevPos.current = d; prevTime.current = now;
+    rmRef.current.setLatLng([d.lat, d.lng]);
+    instanceRef.current.panTo([d.lat, d.lng], { animate: true, duration: 0.8 });
+    
+    if (userLoc) {
+      const rem = haversine(d, userLoc);
+      onUpdate({ eta: Math.max(0, Math.ceil(rem/150)), dist: Math.round(rem), speed: spd, progress: d.progress || 0 });
+    }
+  }, [assignedRider?.location, userLoc]);
+
   return <div ref={mapRef} style={{width:'100%',height:'100%'}}/>
 }
 
 const QUICK_MSGS = ["I'm outside! 🚪","On my way! 🛵","Please call me 📞","5 minutes away! ⏱","At the gate 🔔","Leave at door please 📦"]
 
-export default function OrderTracking({ onBack, order, stalls=[], orders=[] }) {
+export default function OrderTracking({ onBack, order, stalls=[], orders=[], riders=[] }) {
   const [eta,setEta]=useState(8)
   const [dist,setDist]=useState(400)
   const [speed,setSpeed]=useState(0)
@@ -94,15 +102,27 @@ export default function OrderTracking({ onBack, order, stalls=[], orders=[] }) {
   const [chatInput, setChatInput] = useState('')
   const [sheetExpanded,setSheetExpanded]=useState(false)
   const mapRef=useRef(null)
-  const groupOrders=order?.group_id?orders.filter(o=>o.group_id===order.group_id):orders.filter(o=>o.id===order?.id)
-  const [simStatus,setSimStatus]=useState(groupOrders[0]?.status||'Pending')
+  const groupOrders = order?.group_id ? orders.filter(o => o.group_id === order.group_id) : orders.filter(o => o.id === order?.id)
+  const actualStatus = groupOrders[0]?.status || 'Pending'
+  const assignedRider = riders.find(r => r.id === groupOrders[0]?.rider_id)
   const [userLoc, setUserLoc] = useState(null)
 
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        pos => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        err => setUserLoc({ lat: 11.7783, lng: 124.8897 })
+        pos => {
+          setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        },
+        err => {
+          console.warn("GPS Location Error:", err.message)
+          // Fallback to Poblacion City View center if GPS is denied/unavailable
+          setUserLoc({ lat: 11.7783, lng: 124.8897 })
+        },
+        {
+          enableHighAccuracy: true, // Forces precise GPS tracking instead of IP/Cell towers
+          timeout: 10000,
+          maximumAge: 0
+        }
       )
     } else {
       setUserLoc({ lat: 11.7783, lng: 124.8897 })
@@ -113,22 +133,11 @@ export default function OrderTracking({ onBack, order, stalls=[], orders=[] }) {
     if(!text.trim()) return;
     setChatMessages(p => [...p, { id: Date.now(), text: text.trim(), sender: 'me' }]);
     setChatInput('');
-    setTimeout(() => {
-      setChatMessages(p => [...p, { id: Date.now()+1, text: 'Okay, noted on this! 🛵', sender: 'rider' }]);
-    }, 1500);
   }
 
-  useEffect(()=>{
-    if(simStatus==='Delivered'||simStatus==='Cancelled')return
-    const t=setTimeout(()=>{
-      if(simStatus==='Pending')setSimStatus('Preparing')
-      else if(simStatus==='Preparing')setSimStatus('Ready for Pickup')
-      else if(simStatus==='Ready for Pickup')setSimStatus('Delivering')
-    },4000)
-    return()=>clearTimeout(t)
-  },[simStatus])
 
-  const isDelivering=simStatus==='Delivering', isDelivered=simStatus==='Delivered'
+
+  const isDelivering = actualStatus === 'Delivering', isDelivered = actualStatus === 'Delivered'
   useEffect(()=>{if(isDelivering)setViewMode('map');else setViewMode('steps')},[isDelivering])
   useEffect(()=>{if(progress>0.8&&isDelivering)setNearbyAlert(true)},[progress,isDelivering])
 
@@ -139,8 +148,8 @@ export default function OrderTracking({ onBack, order, stalls=[], orders=[] }) {
 
   let lvl=1
   if(isDelivered)lvl=5; else if(isDelivering)lvl=4
-  else if(simStatus==='Ready for Pickup'||simStatus==='Ready for Delivery')lvl=3
-  else if(simStatus==='Preparing')lvl=2
+  else if(actualStatus==='Ready for Pickup'||actualStatus==='Ready for Delivery')lvl=3
+  else if(actualStatus==='Preparing')lvl=2
   const steps=[
     {label:'Order Placed',desc:"We've received your multi-stall orders",done:lvl>=1,active:lvl===1},
     {label:'Preparing Food',desc:'Stalls are preparing your dishes',done:lvl>=2,active:lvl===2},
@@ -165,7 +174,7 @@ export default function OrderTracking({ onBack, order, stalls=[], orders=[] }) {
       </div>}
       <div className="ot-map-canvas">
         {userLoc ? (
-          <TrackMap onUpdate={handleUpdate} isActive={true} groupOrders={groupOrders} stalls={stalls} onMapReady={m=>mapRef.current=m} userLoc={userLoc} />
+          <TrackMap onUpdate={handleUpdate} isActive={true} groupOrders={groupOrders} stalls={stalls} onMapReady={m=>mapRef.current=m} userLoc={userLoc} assignedRider={assignedRider} />
         ) : (
           <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%',background:'#f8f9fa',color:'#999'}}>Locating...</div>
         )}
@@ -175,19 +184,31 @@ export default function OrderTracking({ onBack, order, stalls=[], orders=[] }) {
           <button className="ot-float-btn" onClick={()=>mapRef.current?.zoomOut()}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
           <button className={`ot-float-btn${isFullscreen?' active':''}`} onClick={()=>setIsFullscreen(f=>!f)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">{isFullscreen?<><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></>:<><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></>}</svg></button>
         </div>
-        <button className="ot-float-call" onClick={()=>alert('Calling Rider: 09555111222')}><svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="20" height="20"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+        <button className="ot-float-call" onClick={()=>{ if (assignedRider?.phone) alert(`Calling Rider: ${assignedRider.phone}`); else alert('No rider assigned yet.'); }}><svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="20" height="20"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
       </div>
       {!isFullscreen&&<div className={`ot-rider-sheet${sheetExpanded?' expanded':''}`}>
         <div className="ot-sheet-handle" onClick={()=>setSheetExpanded(e=>!e)}/>
         <div className="ot-rider-profile">
-          <div className="ot-rider-photo" style={{background: '#E8001C', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', fontWeight: 'bold', fontSize: 20}}>P</div>
+          <div className="ot-rider-photo" style={{background: '#E8001C', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', fontWeight: 'bold', fontSize: 20}}>
+            {assignedRider?.fullname ? assignedRider.fullname.charAt(0).toUpperCase() : 'R'}
+          </div>
           <div className="ot-rider-info">
-            <span className="ot-rider-lbl" style={{color: '#E8001C', fontWeight: 800}}>Poblacion Staff Rider</span>
-            <span className="ot-rider-name">John D.</span>
-            <div className="ot-rider-rating"><span className="ot-rider-star" style={{color: '#00B050'}}>✓</span><span style={{color: '#00B050', fontWeight: 700}}>Official In-house Staff</span></div>
+            <span className="ot-rider-lbl" style={{color: '#E8001C', fontWeight: 800}}>
+              {assignedRider?.vehicle_details || 'Poblacion Delivery Rider'}
+            </span>
+            <span className="ot-rider-name">
+              {assignedRider?.fullname || 'Looking for a rider...'}
+            </span>
+            <div className="ot-rider-rating">
+              {assignedRider?.phone ? (
+                <><span className="ot-rider-star" style={{color: '#00B050'}}>✓</span><span style={{color: '#00B050', fontWeight: 700}}>Verified Partner</span></>
+              ) : (
+                <span style={{color: '#888', fontWeight: 600}}>Waiting for assignment</span>
+              )}
+            </div>
           </div>
           <div className="ot-rider-actions">
-            <button className="ot-action-btn phone" onClick={()=>alert('Calling Rider: 09555111222')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+            <button className="ot-action-btn phone" onClick={()=> { if (assignedRider?.phone) alert(`Calling Rider: ${assignedRider.phone}`); else alert('No rider assigned yet.'); }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
             <button className="ot-action-btn chat" onClick={()=>setShowMessages(m=>!m)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
           </div>
         </div>
@@ -244,7 +265,7 @@ export default function OrderTracking({ onBack, order, stalls=[], orders=[] }) {
                   {(s.logo?.startsWith('http') || s.logo?.startsWith('data:')) ? <img src={s.logo} alt="logo" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px'}} /> : s.logo}
                 </span>
                 <div><p style={{fontSize:12.5,fontWeight:700,margin:0}}>{s.stall_name}</p><p style={{fontSize:10,color:'#868E96',margin:0}}>{o.items}</p></div></div>
-              <span className={`ad-badge-status ${simStatus.toLowerCase().replace(/ /g,'-')}`} style={{fontSize:9.5}}>{simStatus}</span>
+              <span className={`ad-badge-status ${(actualStatus || '').toLowerCase().replace(/ /g,'-')}`} style={{fontSize:9.5}}>{actualStatus}</span>
             </div>
           })}
         </div>

@@ -17,22 +17,37 @@ export default function Games({ currentCustomer, promotions = [], initialView = 
     return d;
   };
 
-  const [reservations, setReservations] = useState([]);
+  const [reservations, setReservations] = useState(() => {
+    const saved = localStorage.getItem('poblago_games_reservations');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('poblago_games_reservations', JSON.stringify(reservations));
+  }, [reservations]);
 
   const addReservation = (res) => setReservations(prev => [res, ...prev]);
 
   // --- Court Prices (managed by Game Manager) ---
-  const [courtPrices, setCourtPrices] = useState({
-    morningRate: 200,   // 5AM - 11AM
-    afternoonRate: 280, // 3PM - 7PM
-    openPlayRate: 150,  // Open Play per person
-    courtName1: 'Court 1',
-    courtName2: 'Court 2',
-    openHour: 5,        // courts open at 5 AM
-    closeHour: 19,      // courts close at 7 PM
-    maxPlayersOpenPlay: 24,
-    notes: '',
+  const [courtPrices, setCourtPrices] = useState(() => {
+    const saved = localStorage.getItem('poblago_games_prices');
+    return saved ? JSON.parse(saved) : {
+      morningRate: 200,   // 5AM - 11AM
+      afternoonRate: 280, // 3PM - 7PM
+      openPlayRate: 150,  // Open Play per person
+      courtName1: 'Court 1',
+      courtName2: 'Court 2',
+      openHour: 5,        // courts open at 5 AM
+      closeHour: 19,      // courts close at 7 PM
+      maxPlayersOpenPlay: 24,
+      notes: '',
+    };
   });
+
+  useEffect(() => {
+    localStorage.setItem('poblago_games_prices', JSON.stringify(courtPrices));
+  }, [courtPrices]);
+
 
   const mockCourts = [
     { id: 1, name: "Poblacion Pickle Hub", location: "Poblacion City View", rating: 4.9, reviews: 129, price: 400, type: "Indoor", available: true },
@@ -65,7 +80,7 @@ export default function Games({ currentCustomer, promotions = [], initialView = 
       case 'reservation-details':
         return <ReservationDetails setView={setView} court={selectedCourt || mockCourts[0]} />;
       case 'booking-hub':
-        return <BookingHub setView={setView} addReservation={addReservation} currentCustomer={currentCustomer} courtPrices={courtPrices} reservations={reservations} />;
+        return <BookingHub setView={setView} addReservation={addReservation} setReservations={setReservations} currentCustomer={currentCustomer} courtPrices={courtPrices} reservations={reservations} />;
       case 'admin':
         return <AdminReservations setView={setView} reservations={reservations} setReservations={setReservations} courtPrices={courtPrices} setCourtPrices={setCourtPrices} />;
       default:
@@ -141,20 +156,7 @@ function GamesHome({ setView, promotions = [] }) {
         </div>
       </div>
 
-      <div className="games-categories">
-        <div className="category-item" onClick={() => setView('booking-hub')}>
-          <div className="cat-icon" style={{background: '#ffe5e5', color: '#c60000'}}>🎾</div>
-          <span>Court Rental</span>
-        </div>
-        <div className="category-item" onClick={() => setView('booking-hub')}>
-          <div className="cat-icon" style={{background: '#fff0e5', color: '#ff6b00'}}>🏓</div>
-          <span>Open Play</span>
-        </div>
-        <div className="category-item" onClick={() => setView('my-reservations')}>
-          <div className="cat-icon" style={{background: '#f0e5ff', color: '#8a2be2'}}>📅</div>
-          <span>Reservations</span>
-        </div>
-      </div>
+
 
     </div>
   );
@@ -485,7 +487,7 @@ function MyReservations({ setView, reservations = [], currentCustomer }) {
   return (
     <div className="games-view" style={{ paddingBottom: 80 }}>
       <div className="view-header">
-        <button className="back-btn" onClick={() => setView('home')}>&larr;</button>
+        <button className="back-btn" onClick={() => setView('booking-hub')}>&larr;</button>
         <h2>My Reservations</h2>
         <div style={{width: 24}}></div>
       </div>
@@ -637,6 +639,11 @@ function AdminReservations({ setView, reservations, setReservations, courtPrices
     if (detailModal?.id === id) setDetailModal(prev => ({ ...prev, status: newStatus }));
   };
 
+  const deleteBooking = (id) => {
+    setReservations(prev => prev.filter(r => r.id !== id));
+    if (detailModal?.id === id) setDetailModal(null);
+  };
+
   const baseDate = new Date();
   const days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(baseDate);
@@ -656,24 +663,24 @@ function AdminReservations({ setView, reservations, setReservations, courtPrices
 
   const [selectedDay, setSelectedDay] = useState(0);
 
-  const pendingCount  = reservations.filter(r => r.status === 'Pending').length;
-  const todayCount    = reservations.filter(r => r.date.includes(days[0].matchStr)).length;
-  const openPlayCount = reservations.filter(r => r.type === 'Open Play' && r.status === 'Confirmed').length;
+  // Day-filtered stats
+  const dayRes        = reservations.filter(r => r.date.includes(days[selectedDay].matchStr));
+  const todayCount    = dayRes.length;
+  const pendingCount  = dayRes.filter(r => r.status === 'Pending' || r.status === 'Waiting Payment').length;
+  const openPlayCount = dayRes.filter(r => r.type === 'Open Play' && r.status === 'Confirmed').length;
+  const confirmedCount= dayRes.filter(r => r.status === 'Confirmed').length;
 
   const filtered = reservations.filter(r => {
     if (activeTab === 'rentals' && r.type !== 'Court Rental') return false;
     if (activeTab === 'open-play' && r.type !== 'Open Play') return false;
-    
-    // Filter by selected date
     if (!r.date.includes(days[selectedDay].matchStr)) return false;
-    
     return true;
   });
 
   const statusColor = (s) => {
-    if (s === 'Confirmed')      return { bg: '#E8F5E9', color: '#2E7D32' };
-    if (s === 'Pending')        return { bg: '#FFF3E0', color: '#E65100' };
-    if (s === 'Cancelled')      return { bg: '#FFEBEE', color: '#C62828' };
+    if (s === 'Confirmed')       return { bg: '#E8F5E9', color: '#2E7D32' };
+    if (s === 'Pending')         return { bg: '#FFF3E0', color: '#E65100' };
+    if (s === 'Cancelled')       return { bg: '#FFEBEE', color: '#C62828' };
     if (s === 'Waiting Payment') return { bg: '#FFF8E1', color: '#F57F17' };
     return { bg: '#f0f0f0', color: '#666' };
   };
@@ -704,21 +711,21 @@ function AdminReservations({ setView, reservations, setReservations, courtPrices
 
       {/* Stats Row */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, padding: '0 16px' }}>
-        <div style={{ flex: 1, background: '#C60000', color: 'white', padding: '14px 12px', borderRadius: 14, boxShadow: '0 4px 16px rgba(198,0,0,0.25)', textAlign: 'center' }}>
+        <div style={{ flex: 1, background: '#C60000', color: 'white', padding: '14px 8px', borderRadius: 14, boxShadow: '0 4px 16px rgba(198,0,0,0.25)', textAlign: 'center' }}>
           <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{todayCount}</div>
-          <div style={{ fontSize: 11, opacity: 0.9, marginTop: 4, fontWeight: 500 }}>Today</div>
+          <div style={{ fontSize: 11, opacity: 0.9, marginTop: 4, fontWeight: 500 }}>Bookings</div>
         </div>
-        <div style={{ flex: 1, background: 'white', padding: '14px 12px', borderRadius: 14, border: '1.5px solid #eee', textAlign: 'center' }}>
-          <div style={{ fontSize: 26, fontWeight: 800, color: '#E65100', lineHeight: 1 }}>{pendingCount}</div>
+        <div style={{ flex: 1, background: 'white', padding: '14px 8px', borderRadius: 14, border: '1.5px solid #eee', textAlign: 'center' }}>
+          <div style={{ fontSize: 26, fontWeight: 800, color: pendingCount > 0 ? '#E65100' : '#999', lineHeight: 1 }}>{pendingCount}</div>
           <div style={{ fontSize: 11, color: '#888', marginTop: 4, fontWeight: 500 }}>Pending</div>
         </div>
-        <div style={{ flex: 1, background: 'white', padding: '14px 12px', borderRadius: 14, border: '1.5px solid #eee', textAlign: 'center' }}>
+        <div style={{ flex: 1, background: 'white', padding: '14px 8px', borderRadius: 14, border: '1.5px solid #eee', textAlign: 'center' }}>
           <div style={{ fontSize: 26, fontWeight: 800, color: '#2E7D32', lineHeight: 1 }}>{openPlayCount}</div>
           <div style={{ fontSize: 11, color: '#888', marginTop: 4, fontWeight: 500 }}>Open Play</div>
         </div>
-        <div style={{ flex: 1, background: 'white', padding: '14px 12px', borderRadius: 14, border: '1.5px solid #eee', textAlign: 'center' }}>
-          <div style={{ fontSize: 26, fontWeight: 800, color: '#1A1A1A', lineHeight: 1 }}>{reservations.length}</div>
-          <div style={{ fontSize: 11, color: '#888', marginTop: 4, fontWeight: 500 }}>Total</div>
+        <div style={{ flex: 1, background: 'white', padding: '14px 8px', borderRadius: 14, border: '1.5px solid #eee', textAlign: 'center' }}>
+          <div style={{ fontSize: 26, fontWeight: 800, color: '#1A1A1A', lineHeight: 1 }}>{confirmedCount}</div>
+          <div style={{ fontSize: 11, color: '#888', marginTop: 4, fontWeight: 500 }}>Confirmed</div>
         </div>
       </div>
 
@@ -821,12 +828,29 @@ function AdminReservations({ setView, reservations, setReservations, courtPrices
                           Mark Paid
                         </button>
                       )}
+                      {res.status === 'Cancelled' && (
+                        <button
+                          onClick={() => updateStatus(res.id, 'Confirmed')}
+                          style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', background: '#2E7D32', fontWeight: 700, fontSize: 13, cursor: 'pointer', color: 'white' }}
+                        >
+                          ↩ Restore
+                        </button>
+                      )}
                       {(res.status === 'Confirmed' || res.status === 'Pending') && (
                         <button
                           onClick={() => updateStatus(res.id, 'Cancelled')}
-                          style={{ padding: '10px 16px', borderRadius: 10, border: '1.5px solid #FFCDD2', background: '#FFF5F5', fontWeight: 600, fontSize: 13, cursor: 'pointer', color: '#C62828' }}
+                          style={{ padding: '10px 14px', borderRadius: 10, border: '1.5px solid #FFCDD2', background: '#FFF5F5', fontWeight: 600, fontSize: 13, cursor: 'pointer', color: '#C62828' }}
                         >
-                          Cancel
+                          ✕
+                        </button>
+                      )}
+                      {res.status === 'Cancelled' && (
+                        <button
+                          onClick={() => deleteBooking(res.id)}
+                          style={{ padding: '10px 14px', borderRadius: 10, border: '1.5px solid #FFCDD2', background: '#FFF5F5', fontWeight: 600, fontSize: 13, cursor: 'pointer', color: '#C62828' }}
+                          title="Delete permanently"
+                        >
+                          🗑
                         </button>
                       )}
                     </div>
@@ -910,12 +934,21 @@ function AdminReservations({ setView, reservations, setReservations, courtPrices
                 </button>
               )}
               {detailModal.status === 'Cancelled' && (
-                <button
-                  onClick={() => updateStatus(detailModal.id, 'Confirmed')}
-                  style={{ flex: 1, padding: 14, borderRadius: 12, border: 'none', background: '#2E7D32', color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
-                >
-                  Restore Booking
-                </button>
+                <>
+                  <button
+                    onClick={() => updateStatus(detailModal.id, 'Confirmed')}
+                    style={{ flex: 1, padding: 14, borderRadius: 12, border: 'none', background: '#2E7D32', color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+                  >
+                    ↩ Restore Booking
+                  </button>
+                  <button
+                    onClick={() => deleteBooking(detailModal.id)}
+                    style={{ padding: '14px 18px', borderRadius: 12, border: '1.5px solid #FFCDD2', background: '#FFF5F5', color: '#C62828', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+                    title="Delete permanently"
+                  >
+                    🗑
+                  </button>
+                </>
               )}
             </div>
             <button
@@ -1018,16 +1051,16 @@ function ManagePrices({ courtPrices, setCourtPrices }) {
   );
 }
 
-function BookingHub({ setView, addReservation, currentCustomer, courtPrices = {}, reservations = [] }) {
+function BookingHub({ setView, addReservation, setReservations, currentCustomer, courtPrices = {}, reservations = [] }) {
   const morningRate = courtPrices.morningRate || 200;
   const afternoonRate = courtPrices.afternoonRate || 280;
   const openPlayRate = courtPrices.openPlayRate || 150;
   const [mode, setMode] = useState('rental');
   const [selectedDay, setSelectedDay] = useState(0); // 0 = TODAY
+  const [selectedCourtTab, setSelectedCourtTab] = useState('c1');
   const [bookingModal, setBookingModal] = useState(null); // { time, court, price }
   const [joinModal, setJoinModal] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const [joined, setJoined] = useState(false);
 
   const today = new Date();
   const days = Array.from({ length: 14 }, (_, i) => {
@@ -1107,6 +1140,47 @@ function BookingHub({ setView, addReservation, currentCustomer, courtPrices = {}
     setTimeout(() => setConfirmed(false), 3000);
   };
 
+  const currentSelectedDate = new Date();
+  currentSelectedDate.setDate(currentSelectedDate.getDate() + selectedDay);
+  const dateStrForOpenPlay = currentSelectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const openPlayRes = reservations.filter(r => r.date === dateStrForOpenPlay && r.type === 'Open Play');
+  const confirmedPlayers = openPlayRes.filter(r => r.status === 'Confirmed');
+  const pendingPlayers = openPlayRes.filter(r => r.status === 'Waiting Payment' || r.status === 'Pending');
+  
+  const myJoinedRes = openPlayRes.find(r => r.isOwn && (r.status === 'Confirmed' || r.status === 'Pending' || r.status === 'Waiting Payment'));
+  const isJoined = !!myJoinedRes;
+  const maxPlayers = courtPrices.maxPlayersOpenPlay || 24;
+  const spotsLeft = Math.max(0, maxPlayers - confirmedPlayers.length);
+  const progressPercent = Math.min(100, (confirmedPlayers.length / maxPlayers) * 100);
+
+  const handleJoinOpenPlay = () => {
+    const name = currentCustomer?.fullname || 'Guest';
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const newId = `PGO-${Date.now()}`;
+    addReservation({
+      id: newId,
+      user: name,
+      avatar: initials,
+      court: 'Court 1 & 2',
+      date: dateStrForOpenPlay,
+      time: '8:00 PM - 12:00 AM',
+      price: `PHP ${openPlayRate}`,
+      status: 'Confirmed', // Skipping payment flow
+      type: 'Open Play',
+      phone: currentCustomer?.phone || 'N/A',
+      isOwn: true,
+    });
+    setJoinModal(false);
+    setConfirmed(true);
+    setTimeout(() => setConfirmed(false), 3000);
+  };
+
+  const handleLeaveOpenPlay = () => {
+    if (myJoinedRes) {
+      setReservations(prev => prev.map(r => r.id === myJoinedRes.id ? { ...r, status: 'Cancelled' } : r));
+    }
+  };
+
   return (
     <div className="book-court-wrapper">
       {/* Header */}
@@ -1128,38 +1202,50 @@ function BookingHub({ setView, addReservation, currentCustomer, courtPrices = {}
       </div>
 
       {/* Mode Toggle */}
-      <div className="bc-mode-toggle">
-        <button className={`bc-mode-btn ${mode === 'rental' ? 'active' : ''}`} onClick={() => setMode('rental')}>Court rental</button>
-        <button className={`bc-mode-btn ${mode === 'open-play' ? 'active' : ''}`} onClick={() => setMode('open-play')}>Open play</button>
+      <div className="bc-mode-toggle-wrapper">
+        <div className="bc-mode-toggle">
+          <button className={`bc-mode-btn ${mode === 'rental' ? 'active' : ''}`} onClick={() => setMode('rental')}>Court rental</button>
+          <button className={`bc-mode-btn ${mode === 'open-play' ? 'active' : ''}`} onClick={() => setMode('open-play')}>Open play</button>
+          <button className="bc-mode-btn" onClick={() => setView('my-reservations')}>Reservations</button>
+        </div>
       </div>
+
+      {mode === 'rental' && (
+        <div style={{ display: 'flex', gap: 10, padding: '0 20px', marginBottom: 16, background: '#FAFAFA' }}>
+          <button 
+            onClick={() => setSelectedCourtTab('c1')}
+            style={{ flex: 1, padding: '12px 0', borderRadius: 12, border: 'none', background: selectedCourtTab === 'c1' ? '#C60000' : 'white', color: selectedCourtTab === 'c1' ? 'white' : '#666', fontWeight: 800, fontSize: 13, cursor: 'pointer', boxShadow: selectedCourtTab === 'c1' ? '0 4px 12px rgba(198,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.05)', transition: 'all 0.25s ease' }}
+          >
+            COURT 1
+          </button>
+          <button 
+            onClick={() => setSelectedCourtTab('c2')}
+            style={{ flex: 1, padding: '12px 0', borderRadius: 12, border: 'none', background: selectedCourtTab === 'c2' ? '#C60000' : 'white', color: selectedCourtTab === 'c2' ? 'white' : '#666', fontWeight: 800, fontSize: 13, cursor: 'pointer', boxShadow: selectedCourtTab === 'c2' ? '0 4px 12px rgba(198,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.05)', transition: 'all 0.25s ease' }}
+          >
+            COURT 2
+          </button>
+        </div>
+      )}
 
       {/* Confirmed Toast */}
       {confirmed && (
         <div style={{
-          background: '#C60000', color: 'white', padding: '12px 20px',
-          textAlign: 'center', fontWeight: 700, fontSize: 14,
-          animation: 'fadeIn 0.3s ease'
+          position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
+          background: 'linear-gradient(135deg, #1B5E20, #2E7D32)',
+          color: 'white', padding: '14px 28px',
+          borderRadius: 50, fontWeight: 700, fontSize: 14,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          display: 'flex', alignItems: 'center', gap: 10,
+          zIndex: 500, whiteSpace: 'nowrap',
+          animation: 'slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}>
-          ✓ Court booked successfully!
-        </div>
-      )}
-      {joined && (
-        <div style={{
-          background: '#2E7D32', color: 'white', padding: '12px 20px',
-          textAlign: 'center', fontWeight: 700, fontSize: 14,
-        }}>
-          ✓ You have joined the session!
+          <span style={{ fontSize: 18 }}>✓</span> Booking confirmed!
         </div>
       )}
 
       {/* Court Rental View */}
       {mode === 'rental' ? (
         <div className="bc-body">
-          <div className="bc-court-headers">
-            <div style={{ flex: 1 }}></div>
-            <div className="bc-ch">COURT 1</div>
-            <div className="bc-ch">COURT 2</div>
-          </div>
           <div className="bc-legend">
             <span className="lg-title">LEGEND</span>
             <div className="lg-item"><div className="lg-color open"></div> Open</div>
@@ -1168,28 +1254,19 @@ function BookingHub({ setView, addReservation, currentCustomer, courtPrices = {}
           </div>
           <div className="bc-slots">
             {baseSlotData.map((s, i) => {
-              const c1Status = getSlotStatus(i, 'c1');
-              const c2Status = getSlotStatus(i, 'c2');
+              const status = getSlotStatus(i, selectedCourtTab);
               return (
                 <div key={i} className="bc-slot-row">
                   <div className="bc-time-col">
                     <span className="bc-time">{s.time}</span>
                     <span className="bc-price">{s.price}</span>
                   </div>
-                  <div className="bc-court-col">
+                  <div className="bc-court-col" style={{ flex: 1, maxWidth: 'none', padding: 0 }}>
                     <button
-                      className={`bc-slot-btn ${c1Status === 'na' ? 'na' : c1Status}`}
-                      onClick={() => handleSlotClick(i, 'c1', c1Status, s.time, s.price)}
+                      className={`bc-slot-btn ${status === 'na' ? 'na' : status}`}
+                      onClick={() => handleSlotClick(i, selectedCourtTab, status, s.time, s.price)}
                     >
-                      {c1Status === 'na' ? 'N/A' : c1Status === 'booked' ? 'Booked' : 'Book'}
-                    </button>
-                  </div>
-                  <div className="bc-court-col">
-                    <button
-                      className={`bc-slot-btn ${c2Status === 'na' ? 'na' : c2Status}`}
-                      onClick={() => handleSlotClick(i, 'c2', c2Status, s.time, s.price)}
-                    >
-                      {c2Status === 'na' ? 'N/A' : c2Status === 'booked' ? 'Booked' : 'Book'}
+                      {status === 'na' ? 'N/A' : status === 'booked' ? 'Booked' : 'Book'}
                     </button>
                   </div>
                 </div>
@@ -1205,7 +1282,7 @@ function BookingHub({ setView, addReservation, currentCustomer, courtPrices = {}
               <div className="bc-op-title">Night Open Play (court 1 &amp; 2)</div>
               <div className="bc-op-price">
                 PHP<br />
-                <span style={{ fontSize: 20 }}>150</span><br />
+                <span style={{ fontSize: 20 }}>{openPlayRate}</span><br />
                 <span style={{ fontSize: 10, fontWeight: 500, color: '#888' }}>per person</span>
               </div>
             </div>
@@ -1214,32 +1291,40 @@ function BookingHub({ setView, addReservation, currentCustomer, courtPrices = {}
             </div>
             <div className="bc-op-progress-container">
               <div className="bc-op-progress-bar">
-                <div className="bc-op-progress-fill" style={{ width: joined ? '27%' : '20%', transition: 'width 0.5s ease' }}></div>
+                <div className="bc-op-progress-fill" style={{ width: `${progressPercent}%`, transition: 'width 0.5s ease' }}></div>
               </div>
-              <div className="bc-op-spots">{joined ? '11 spots left' : '12 spots left'}</div>
+              <div className="bc-op-spots">{spotsLeft} spots left</div>
             </div>
 
-            <div className="bc-op-section-title">CONFIRMED PLAYERS ({joined ? 12 : 11})</div>
+            <div className="bc-op-section-title">CONFIRMED PLAYERS ({confirmedPlayers.length})</div>
             <div className="bc-op-players-list">
-              {['Mark Dones','Byron Dones','Hermes Jr.','Shane','Lance Cornico','Gino','Flong','Ralph','Aira','Tep','Ella'].map(p => (
-                <div key={p} className="bc-player"><div className="dot green"></div>{p}</div>
+              {confirmedPlayers.map(p => (
+                <div key={p.id} className="bc-player" style={p.isOwn ? { background: '#FFF0F0', border: '1px solid #C60000' } : {}}>
+                  <div className="dot green"></div>{p.isOwn ? 'You' : p.user.split(' ')[0]}
+                </div>
               ))}
-              {joined && <div className="bc-player" style={{ background: '#FFF0F0', border: '1px solid #C60000' }}><div className="dot" style={{ background: '#C60000', width: 8, height: 8, borderRadius: '50%' }}></div>You</div>}
+              {confirmedPlayers.length === 0 && <span style={{ fontSize: 12, color: '#999' }}>No players yet</span>}
             </div>
 
-            {!joined && (
+            {pendingPlayers.length > 0 && (
               <>
-                <div className="bc-op-section-title" style={{ marginTop: 20 }}>WAITING FOR PAYMENT (1)</div>
+                <div className="bc-op-section-title" style={{ marginTop: 20 }}>WAITING FOR PAYMENT ({pendingPlayers.length})</div>
                 <div className="bc-op-players-list">
-                  <div className="bc-player"><div className="dot orange"></div>Neon</div>
+                  {pendingPlayers.map(p => (
+                    <div key={p.id} className="bc-player" style={p.isOwn ? { background: '#FFF0F0', border: '1px solid #FF9800' } : {}}>
+                      <div className="dot orange"></div>{p.isOwn ? 'You' : p.user.split(' ')[0]}
+                    </div>
+                  ))}
                 </div>
               </>
             )}
 
-            {!joined ? (
-              <button className="bc-op-join-btn" onClick={() => setJoinModal(true)}>Join This Session</button>
+            {!isJoined ? (
+              <button className="bc-op-join-btn" onClick={() => setJoinModal(true)} disabled={spotsLeft === 0} style={{ opacity: spotsLeft === 0 ? 0.5 : 1 }}>
+                {spotsLeft === 0 ? 'Session Full' : 'Join This Session'}
+              </button>
             ) : (
-              <button className="bc-op-join-btn" style={{ background: '#2E7D32' }} onClick={() => setJoined(false)}>Leave Session</button>
+              <button className="bc-op-join-btn" style={{ background: '#2E7D32' }} onClick={handleLeaveOpenPlay}>Leave Session</button>
             )}
           </div>
         </div>
@@ -1258,23 +1343,34 @@ function BookingHub({ setView, addReservation, currentCustomer, courtPrices = {}
             <h3 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 800, color: '#1A1A1A' }}>Confirm Booking</h3>
             <p style={{ margin: '0 0 20px', color: '#888', fontSize: 13 }}>Review your court reservation details</p>
 
-            <div style={{ background: '#FFF0F0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ color: '#666', fontSize: 13 }}>Court</span>
-                <span style={{ fontWeight: 700, fontSize: 13 }}>{bookingModal.court === 'c1' ? 'Court 1' : 'Court 2'}</span>
+            <div style={{ background: '#F7F7F7', borderRadius: 16, padding: 20, marginBottom: 16 }}>
+              {currentCustomer && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid #eee' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#C60000', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+                    {(currentCustomer.fullname || 'G').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{currentCustomer.fullname || 'Guest'}</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>{currentCustomer.phone || ''}</div>
+                  </div>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ color: '#888', fontSize: 13 }}>Court</span>
+                <span style={{ fontWeight: 700, fontSize: 13 }}>{bookingModal.court === 'c1' ? (courtPrices.courtName1 || 'Court 1') : (courtPrices.courtName2 || 'Court 2')}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ color: '#666', fontSize: 13 }}>Date</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ color: '#888', fontSize: 13 }}>Date</span>
                 <span style={{ fontWeight: 700, fontSize: 13 }}>{days[selectedDay].full}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ color: '#666', fontSize: 13 }}>Time</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ color: '#888', fontSize: 13 }}>Time</span>
                 <span style={{ fontWeight: 700, fontSize: 13 }}>{bookingModal.time}</span>
               </div>
-              <div style={{ height: 1, background: '#eee', margin: '12px 0' }}></div>
+              <div style={{ height: 1, background: '#E0E0E0', margin: '14px 0' }}></div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: 700 }}>Total</span>
-                <span style={{ fontWeight: 800, color: '#C60000', fontSize: 16 }}>{bookingModal.price}</span>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>Total</span>
+                <span style={{ fontWeight: 900, color: '#C60000', fontSize: 18 }}>{bookingModal.price}</span>
               </div>
             </div>
 
@@ -1315,35 +1411,46 @@ function BookingHub({ setView, addReservation, currentCustomer, courtPrices = {}
             <h3 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 800 }}>Join Open Play</h3>
             <p style={{ margin: '0 0 20px', color: '#888', fontSize: 13 }}>Night Open Play • 8 PM - 12 AM</p>
 
-            <div style={{ background: '#FFF0F0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ color: '#666', fontSize: 13 }}>Date</span>
+            <div style={{ background: '#F7F7F7', borderRadius: 16, padding: 20, marginBottom: 16 }}>
+              {currentCustomer && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid #eee' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#C60000', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+                    {(currentCustomer.fullname || 'G').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{currentCustomer.fullname || 'Guest'}</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>{currentCustomer.phone || ''}</div>
+                  </div>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ color: '#888', fontSize: 13 }}>Date</span>
                 <span style={{ fontWeight: 700, fontSize: 13 }}>{days[selectedDay].full}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ color: '#666', fontSize: 13 }}>Courts</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ color: '#888', fontSize: 13 }}>Courts</span>
                 <span style={{ fontWeight: 700, fontSize: 13 }}>Court 1 &amp; 2</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ color: '#666', fontSize: 13 }}>Spots Left</span>
-                <span style={{ fontWeight: 700, fontSize: 13, color: '#C60000' }}>12 spots</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ color: '#888', fontSize: 13 }}>Spots Left</span>
+                <span style={{ fontWeight: 700, fontSize: 13, color: spotsLeft <= 5 ? '#C60000' : '#2E7D32' }}>{spotsLeft} spots</span>
               </div>
-              <div style={{ height: 1, background: '#eee', margin: '12px 0' }}></div>
+              <div style={{ height: 1, background: '#E0E0E0', margin: '14px 0' }}></div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: 700 }}>Fee</span>
-                <span style={{ fontWeight: 800, color: '#C60000', fontSize: 16 }}>PHP 150 / person</span>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>Fee</span>
+                <span style={{ fontWeight: 900, color: '#C60000', fontSize: 18 }}>PHP {openPlayRate} / person</span>
               </div>
             </div>
 
             <button
-              onClick={() => { setJoinModal(false); setJoined(true); }}
+              onClick={handleJoinOpenPlay}
               style={{
                 width: '100%', background: '#C60000', color: 'white',
                 border: 'none', padding: 16, borderRadius: 12,
                 fontWeight: 700, fontSize: 16, cursor: 'pointer', marginBottom: 12
               }}
             >
-              Confirm &amp; Pay PHP 150
+              Confirm &amp; Pay PHP {openPlayRate}
             </button>
             <button
               onClick={() => setJoinModal(false)}
